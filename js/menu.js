@@ -1,6 +1,7 @@
 /*
-  Навигация станции. Пункт меню появляется только после закрытия
-  соответствующего квеста. Скрытая страница дневника в меню не значится.
+  Навигация станции. При CONFIG.openAccess все пункты видны сразу,
+  иначе пункт появляется после закрытия соответствующего квеста.
+  Скрытая страница дневника в меню не значится.
 */
 
 const MENU_ITEMS = [
@@ -14,10 +15,14 @@ const MENU_ITEMS = [
   { label: 'Терминалы — SQL (notes)', href: 'notes-db.html', after: 'q7' }
 ];
 
+function isUnlocked(item) {
+  return CONFIG.openAccess || isDone(item.after);
+}
+
 function renderHeader() {
-  if (!isDone('q0')) return;
+  if (!CONFIG.openAccess && !isDone('q0')) return;
   const links = MENU_ITEMS
-    .filter(i => isDone(i.after))
+    .filter(isUnlocked)
     .map(i => `<a href="${i.href}">${i.label}</a>`)
     .join('');
   const header = document.createElement('header');

@@ -14,6 +14,7 @@ function markDone(q) {
 }
 
 function requireDone(q, redirectTo = 'dashboard.html') {
+  if (CONFIG.openAccess) return true;
   if (!isDone(q)) {
     window.location.href = redirectTo;
     return false;
