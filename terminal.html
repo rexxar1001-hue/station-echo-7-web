@@ -9,22 +9,14 @@
 <body>
 <div class="wrap">
   <h1>PYTHON-ТЕРМИНАЛ СТАНЦИИ</h1>
-  <div class="panel">
-    <p>Выполняемый код:</p>
-    <pre id="code">import base64
-
-text = input('Введите ваш текст: ')
-decoded = base64.b64decode(text).decode('utf-8')
-print(decoded)</pre>
-    <p class="muted">Значение переменной <code>text</code> берётся из поля ниже.</p>
+  <div class="panel" id="clipboardPanel" style="display:none">
+    <p>Буфер терминала:</p>
+    <pre id="clipboard"></pre>
   </div>
   <div class="panel">
-    <label for="userInput">Введите ваш текст:</label>
-    <textarea id="userInput" rows="3" spellcheck="false"></textarea>
-    <p>
-      <button id="run" type="button">Выполнить</button>
-      <label class="muted"><input type="checkbox" id="twice" style="width:auto"> применить декодер дважды</label>
-    </p>
+    <label for="userInput">Python 3.11 — введите код:</label>
+    <textarea id="userInput" rows="10" spellcheck="false" placeholder="&gt;&gt;&gt;"></textarea>
+    <p><button id="run" type="button">Выполнить</button></p>
     <pre id="out">&gt;</pre>
     <div id="next"></div>
   </div>
@@ -45,29 +37,15 @@ const params = new URLSearchParams(location.search);
 const target = params.get('target');
 let pyodideReady = null;
 
-function setCodeTemplate(twice) {
-  document.getElementById('code').textContent = twice
-    ? `import base64
-
-text = input('Введите ваш текст: ')
-decoded = base64.b64decode(base64.b64decode(text)).decode('utf-8')
-print(decoded)`
-    : `import base64
-
-text = input('Введите ваш текст: ')
-decoded = base64.b64decode(text).decode('utf-8')
-print(decoded)`;
-}
-
 function afterDecode(decoded) {
   const next = document.getElementById('next');
   if (target === 'logs' && decoded.includes(CONFIG.cameraId)) {
     markDone('q6');
     next.innerHTML = '<p><a class="btn" href="cameras.html">Перейти к видеонаблюдению</a></p>';
-  } else if (target === 'notes' && /\.html?$/i.test(decoded.trim())) {
+  } else if (target === 'notes' && /[\w.\-]+\.html?/i.test(decoded)) {
     markDone('q8');
-    const path = decoded.trim().replace(/^\/+/, '');
-    next.innerHTML = `<p><a class="btn" href="${path}">${decoded.trim()}</a></p>`;
+    const path = decoded.match(/[\w.\-]+\.html?/i)[0];
+    next.innerHTML = `<p><a class="btn" href="${path}">${path}</a></p>`;
   } else {
     next.innerHTML = '';
   }
@@ -75,35 +53,30 @@ function afterDecode(decoded) {
 
 async function runCode() {
   const out = document.getElementById('out');
-  const twice = document.getElementById('twice').checked;
-  const value = document.getElementById('userInput').value.trim();
-  if (!value) return;
+  const source = document.getElementById('userInput').value;
+  if (!source.trim()) return;
   out.textContent = 'Инициализация интерпретатора…';
   pyodideReady = pyodideReady || loadPyodide();
   const pyodide = await pyodideReady;
-  pyodide.globals.set('text', value);
-  pyodide.globals.set('twice', twice);
-  const code = `
-import base64
-raw = base64.b64decode(text)
-if twice:
-    raw = base64.b64decode(raw)
-decoded = raw.decode('utf-8')
-decoded
-`;
+  let printed = '';
+  pyodide.setStdout({ batched: s => { printed += s + '\n'; } });
+  pyodide.setStderr({ batched: s => { printed += s + '\n'; } });
   try {
-    const decoded = await pyodide.runPythonAsync(code);
-    out.textContent = decoded;
-    afterDecode(String(decoded));
+    const result = await pyodide.runPythonAsync(source);
+    if (result !== undefined && result !== null && !printed) printed = String(result) + '\n';
+    out.textContent = printed.trim() || '(пустой вывод)';
+    afterDecode(printed);
   } catch (e) {
-    out.textContent = 'Ошибка: ' + (e.message || e).toString().split('\n').slice(-3).join('\n');
+    out.textContent = (printed + (e.message || e)).toString().split('\n').slice(-4).join('\n');
   }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   const value = params.get('value');
-  if (value) document.getElementById('userInput').value = value;
-  document.getElementById('twice').addEventListener('change', e => setCodeTemplate(e.target.checked));
+  if (value) {
+    document.getElementById('clipboard').textContent = value;
+    document.getElementById('clipboardPanel').style.display = '';
+  }
   document.getElementById('run').addEventListener('click', runCode);
 });
 </script>
