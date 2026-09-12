@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — фотоархив</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>АРХИВЫ — ФОТОАРХИВ</h1>
+  <div class="panel">
+    <p>Полевые снимки, загруженные персоналом станции. Имя файла содержит табельный номер сотрудника.</p>
+  </div>
+  <div class="panel">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q1');
+
+const PHOTO_IDS = [
+  '012', '031', '044', '087', '019', '103', '066', '128', '075', '008',
+  '140', '052', '097', '023', '111', '038', '084', '149', '061', '005'
+];
+
+document.addEventListener('DOMContentLoaded', function () {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = PHOTO_IDS.map(id => {
+    const file = `field_photo_${id}.jpg`;
+    return `<a class="tile" href="exif-tool.html?file=${file}">
+        <img src="img/${file}" alt="${file}" loading="lazy">${file}
+      </a>`;
+  }).join('');
+});
+</script>
+</body>
+</html>

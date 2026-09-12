@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — аварийный доступ</title>
+<link rel="stylesheet" href="css/style.css">
+<!--
+  SYSTEM LOG — auth service, auto-generated, do not remove
+  2024-09-01 03:12:47 — password reset requested
+  target: employee_id 087
+  reason: credential rotation after security audit
+  status: completed
+  new_hash_ref: bKlb85kA
+-->
+</head>
+<body>
+<div class="login-screen">
+  <div class="login-box panel">
+    <h1>АВАРИЙНЫЙ ДОСТУП ECHO-7</h1>
+    <p class="muted">Восстановите канал связи, введя учётные данные пары.</p>
+    <form id="login-form" autocomplete="off">
+      <label for="login">Логин</label>
+      <input type="text" id="login" name="login" autocomplete="off">
+      <label for="password">Пароль</label>
+      <input type="password" id="password" name="password" autocomplete="off">
+      <p class="error" id="error"></p>
+      <button type="submit">Открыть защищённый канал</button>
+    </form>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script>
+document.getElementById('login-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const login = document.getElementById('login').value.trim();
+  const password = document.getElementById('password').value;
+  if (login.toLowerCase() === CONFIG.login.name.toLowerCase() && password === CONFIG.login.password) {
+    markDone('q0');
+    window.location.href = 'dashboard.html';
+  } else {
+    document.getElementById('error').textContent = 'Доступ не подтверждён';
+  }
+});
+
+if (isDone('q0')) {
+  document.getElementById('error').textContent = '';
+}
+</script>
+</body>
+</html>

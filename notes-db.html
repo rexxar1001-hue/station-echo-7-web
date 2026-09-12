@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — терминал SQL (notes)</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>ТЕРМИНАЛ SQL — СЛУЖЕБНЫЕ ЗАМЕТКИ</h1>
+  <div class="panel">
+    <p>Задание: найдите служебную заметку сотрудника, о котором идёт речь в деле операции.</p>
+    <p class="muted">Доступна таблица <code>notes</code>. Разрешены только запросы SELECT.</p>
+  </div>
+  <div class="panel">
+    <textarea id="sql" rows="4" spellcheck="false" placeholder="SELECT ..."></textarea>
+    <p><button id="run" type="button">Выполнить</button>
+      <span class="muted">или Ctrl+Enter</span></p>
+    <div id="out"></div>
+  </div>
+  <div class="panel" id="done" style="display:none"></div>
+</div>
+
+<script src="https://sql.js.org/dist/sql-wasm.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/sqlterm.js"></script>
+<script>
+requireDone('q7');
+
+document.addEventListener('DOMContentLoaded', function () {
+  initSqlTerminal({
+    inputId: 'sql',
+    runId: 'run',
+    outputId: 'out',
+    allowedTable: 'notes',
+    onResult(columns, values) {
+      const idIndex = columns.indexOf('id');
+      const noteIndex = columns.indexOf('note');
+      if (idIndex < 0 || noteIndex < 0) return;
+      const row = values.find(r => Number(r[idIndex]) === CONFIG.target.id);
+      if (!row) return;
+      const done = document.getElementById('done');
+      done.style.display = '';
+      done.innerHTML = `<p>Заметка сотрудника ${String(CONFIG.target.id).padStart(3, '0')} хранится в закодированном виде.</p>
+        <p><a class="btn" href="terminal.html?target=notes&value=${encodeURIComponent(row[noteIndex])}">Открыть Python-терминал</a></p>`;
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — личный кабинет</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>ЛИЧНЫЙ КАБИНЕТ ОПЕРАТОРА</h1>
+  <div class="panel">
+    <p>Канал связи открыт. Станция ECHO-7, сектор GAMMA.</p>
+    <p class="muted">Новые разделы станции открываются по мере поступления указаний.
+      Проверяйте входящие сообщения — иконка конверта в шапке.</p>
+  </div>
+  <div class="panel" id="progress"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q0', 'index.html');
+
+document.addEventListener('DOMContentLoaded', function () {
+  const rows = MENU_ITEMS.map(i =>
+    `<tr><td>${i.label}</td><td>${isDone(i.after) ? '<span class="status-ok">доступно</span>' : '<span class="muted">закрыто</span>'}</td></tr>`
+  ).join('');
+  document.getElementById('progress').innerHTML =
+    `<h2>СОСТОЯНИЕ ДОСТУПОВ</h2><table><tr><th>Раздел</th><th>Статус</th></tr>${rows}</table>`;
+  processPendingNotification();
+});
+</script>
+</body>
+</html>

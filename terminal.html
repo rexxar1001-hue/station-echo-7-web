@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — Python-терминал</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>PYTHON-ТЕРМИНАЛ СТАНЦИИ</h1>
+  <div class="panel">
+    <p>Выполняемый код:</p>
+    <pre id="code">import base64
+
+text = input('Введите ваш текст: ')
+decoded = base64.b64decode(text).decode('utf-8')
+print(decoded)</pre>
+    <p class="muted">Значение переменной <code>text</code> берётся из поля ниже.</p>
+  </div>
+  <div class="panel">
+    <label for="userInput">Введите ваш текст:</label>
+    <textarea id="userInput" rows="3" spellcheck="false"></textarea>
+    <p>
+      <button id="run" type="button">Выполнить</button>
+      <label class="muted"><input type="checkbox" id="twice" style="width:auto"> применить декодер дважды</label>
+    </p>
+    <pre id="out">&gt;</pre>
+    <div id="next"></div>
+  </div>
+  <div class="panel">
+    <a class="btn" href="dashboard.html">Личный кабинет</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q5');
+
+const params = new URLSearchParams(location.search);
+const target = params.get('target');
+let pyodideReady = null;
+
+function setCodeTemplate(twice) {
+  document.getElementById('code').textContent = twice
+    ? `import base64
+
+text = input('Введите ваш текст: ')
+decoded = base64.b64decode(base64.b64decode(text)).decode('utf-8')
+print(decoded)`
+    : `import base64
+
+text = input('Введите ваш текст: ')
+decoded = base64.b64decode(text).decode('utf-8')
+print(decoded)`;
+}
+
+function afterDecode(decoded) {
+  const next = document.getElementById('next');
+  if (target === 'logs' && decoded.includes(CONFIG.cameraId)) {
+    markDone('q6');
+    next.innerHTML = '<p><a class="btn" href="cameras.html">Перейти к видеонаблюдению</a></p>';
+  } else if (target === 'notes' && /\.html?$/i.test(decoded.trim())) {
+    markDone('q8');
+    const path = decoded.trim().replace(/^\/+/, '');
+    next.innerHTML = `<p><a class="btn" href="${path}">${decoded.trim()}</a></p>`;
+  } else {
+    next.innerHTML = '';
+  }
+}
+
+async function runCode() {
+  const out = document.getElementById('out');
+  const twice = document.getElementById('twice').checked;
+  const value = document.getElementById('userInput').value.trim();
+  if (!value) return;
+  out.textContent = 'Инициализация интерпретатора…';
+  pyodideReady = pyodideReady || loadPyodide();
+  const pyodide = await pyodideReady;
+  pyodide.globals.set('text', value);
+  pyodide.globals.set('twice', twice);
+  const code = `
+import base64
+raw = base64.b64decode(text)
+if twice:
+    raw = base64.b64decode(raw)
+decoded = raw.decode('utf-8')
+decoded
+`;
+  try {
+    const decoded = await pyodide.runPythonAsync(code);
+    out.textContent = decoded;
+    afterDecode(String(decoded));
+  } catch (e) {
+    out.textContent = 'Ошибка: ' + (e.message || e).toString().split('\n').slice(-3).join('\n');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const value = params.get('value');
+  if (value) document.getElementById('userInput').value = value;
+  document.getElementById('twice').addEventListener('change', e => setCodeTemplate(e.target.checked));
+  document.getElementById('run').addEventListener('click', runCode);
+});
+</script>
+</body>
+</html>

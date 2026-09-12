@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — служебный сброс</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>СЛУЖЕБНАЯ СТРАНИЦА — СБРОС ПРОГРЕССА</h1>
+  <div class="panel">
+    <p class="muted">Только для ведущего: стирает флаги прохождения из localStorage.</p>
+    <p><button id="reset" type="button">Сбросить прогресс</button>
+      <a class="btn" href="index.html">К экрану входа</a></p>
+    <p id="msg"></p>
+  </div>
+  <div class="panel">
+    <h2>Отладка: открыть квест сразу</h2>
+    <p class="muted">Отмечает все предыдущие квесты выполненными.</p>
+    <p id="jump"></p>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script>
+const ORDER = ['q0', 'q1', 'q2a', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'];
+const PAGES = {
+  q0: 'dashboard.html', q1: 'photos.html', q2: 'map.html', q3: 'radio-archive.html',
+  q4: 'nicknames.html', q5: 'logs.html', q6: 'cameras.html', q7: 'notes-db.html'
+};
+
+document.getElementById('reset').addEventListener('click', () => {
+  resetProgress();
+  document.getElementById('msg').textContent = 'Прогресс сброшен.';
+});
+
+document.getElementById('jump').innerHTML = Object.keys(PAGES)
+  .map(q => `<button type="button" data-q="${q}">после ${q} → ${PAGES[q]}</button> `).join('');
+
+document.getElementById('jump').addEventListener('click', e => {
+  const btn = e.target.closest('[data-q]');
+  if (!btn) return;
+  const upto = ORDER.indexOf(btn.dataset.q);
+  ORDER.slice(0, upto + 1).forEach(markDone);
+  window.location.href = PAGES[btn.dataset.q];
+});
+</script>
+</body>
+</html>

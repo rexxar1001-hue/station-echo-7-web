@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — монитор пульса</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>АВАРИЙНОЕ ПОДКЛЮЧЕНИЕ МОНИТОРА ПУЛЬСА</h1>
+  <div class="panel">
+    <p>Соедините контакты с разъёмами согласно монтажной схеме.
+      Схема выдана Аналитику в печатном виде.</p>
+    <p class="muted">Выберите контакт слева, затем разъём справа.</p>
+  </div>
+  <div class="panel">
+    <div class="wire-board">
+      <div class="wire-col" id="contacts"></div>
+      <div class="wire-col" id="sockets"></div>
+    </div>
+    <p id="msg" class="muted"></p>
+    <p><button id="reset" type="button">Сбросить попытку</button></p>
+  </div>
+  <div class="panel" id="done" style="display:none">
+    <p>Статус монитора: <span class="status-bad">CRITICAL</span> — сигнал восстановлен, пульс есть.</p>
+    <a class="btn" href="dashboard.html">Личный кабинет</a>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q4');
+
+const COLORS = [
+  { key: 'red', label: 'Красный', css: '#e0473c' },
+  { key: 'blue', label: 'Синий', css: '#4a7de0' },
+  { key: 'yellow', label: 'Жёлтый', css: '#e0c33c' },
+  { key: 'green', label: 'Зелёный', css: '#4ce06a' }
+];
+
+let selected = null;
+let linked = {};
+
+function render() {
+  document.getElementById('contacts').innerHTML = COLORS.map(c =>
+    `<div class="contact ${selected === c.key ? 'selected' : ''} ${linked[c.key] ? 'linked' : ''}" data-color="${c.key}">
+       <span class="dot" style="background:${c.css}"></span>${c.label}${linked[c.key] ? ' → ' + linked[c.key] : ''}
+     </div>`).join('');
+  const taken = Object.values(linked);
+  document.getElementById('sockets').innerHTML = [1, 2, 3, 4].map(n =>
+    `<div class="socket ${taken.includes(n) ? 'linked' : ''}" data-socket="${n}">Разъём ${n}</div>`).join('');
+}
+
+function check() {
+  if (Object.keys(linked).length < 4) return;
+  const ok = COLORS.every(c => linked[c.key] === CONFIG.wiring[c.key]);
+  if (ok) {
+    markDone('q5');
+    document.getElementById('msg').innerHTML = '<span class="status-ok">Схема верна. Канал монитора восстановлен.</span>';
+    document.getElementById('done').style.display = '';
+  } else {
+    linked = {};
+    selected = null;
+    render();
+    document.getElementById('msg').innerHTML = '<span class="status-bad">Неверная схема. Соединения сброшены, попробуйте снова.</span>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  render();
+  document.getElementById('contacts').addEventListener('click', e => {
+    const el = e.target.closest('[data-color]');
+    if (!el || linked[el.dataset.color]) return;
+    selected = el.dataset.color;
+    render();
+  });
+  document.getElementById('sockets').addEventListener('click', e => {
+    const el = e.target.closest('[data-socket]');
+    if (!el) return;
+    const socket = Number(el.dataset.socket);
+    if (!selected || Object.values(linked).includes(socket)) return;
+    linked[selected] = socket;
+    selected = null;
+    render();
+    check();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    linked = {};
+    selected = null;
+    document.getElementById('msg').textContent = '';
+    render();
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — позывные</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>БАЗА СОТРУДНИКОВ — ПОЗЫВНЫЕ</h1>
+  <div class="panel">
+    <p>Оперативные позывные персонала. Расшифровка имён на этом экране не выводится.</p>
+    <div class="grid" id="list"></div>
+  </div>
+  <div class="panel" id="card" style="display:none"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q4');
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('list').innerHTML = CONFIG.callsigns
+    .map(c => `<div class="tile" data-cs="${c}">${c}</div>`).join('');
+
+  document.getElementById('list').addEventListener('click', e => {
+    const tile = e.target.closest('[data-cs]');
+    if (!tile) return;
+    const card = document.getElementById('card');
+    card.style.display = '';
+    if (tile.dataset.cs !== CONFIG.callsign) {
+      card.innerHTML = `<h2>${tile.dataset.cs}</h2>
+        <p class="muted">Личное дело закрыто для этого терминала.</p>`;
+      return;
+    }
+    const t = CONFIG.target;
+    card.innerHTML = `
+      <h2>ЛИЧНОЕ ДЕЛО — ${CONFIG.callsign}</h2>
+      <table>
+        <tr><th>id</th><td>${String(t.id).padStart(3, '0')}</td></tr>
+        <tr><th>name</th><td>${t.name}</td></tr>
+        <tr><th>role</th><td>${t.role}</td></tr>
+        <tr><th>sector</th><td>${t.sector}</td></tr>
+        <tr><th>clearance</th><td>${t.clearance}</td></tr>
+        <tr><th>status</th><td>${t.status}</td></tr>
+      </table>
+      <p>Монитор пульса: <span class="status-bad">NO SIGNAL</span></p>
+      <a class="btn" href="heartbeat.html">Восстановить соединение</a>`;
+  });
+});
+</script>
+</body>
+</html>

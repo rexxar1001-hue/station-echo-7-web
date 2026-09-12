@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — чтение метаданных</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>ИНСТРУМЕНТ ЧТЕНИЯ МЕТАДАННЫХ ИЗОБРАЖЕНИЙ</h1>
+  <div class="panel">
+    <p id="filename" class="muted">Файл не выбран.</p>
+    <p><input type="file" id="upload" accept="image/*"></p>
+    <p class="muted">Инструмент выводит сырые теги файла без интерпретации.</p>
+  </div>
+  <div class="panel">
+    <img id="preview" alt="" style="max-width:280px;display:none">
+    <div id="tags"></div>
+  </div>
+  <div class="panel">
+    <a class="btn" href="photos.html">Назад в фотоархив</a>
+    <a class="btn" href="dashboard.html">Личный кабинет</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q1');
+
+const OPTIONS = { tiff: true, ifd0: true, exif: true, gps: true, translateValues: false, reviveValues: false, mergeOutput: true };
+
+function formatValue(key, value) {
+  if (Array.isArray(value) && value.length === 3 && /^GPS(Dest)?(Latitude|Longitude)$/.test(key)) {
+    const [d, m, s] = value.map(Number);
+    return `${d}° ${String(m).padStart(2, '0')}' ${s.toFixed(2)}"`;
+  }
+  if (Array.isArray(value)) return value.join(', ');
+  if (value instanceof Uint8Array) return '[binary]';
+  if (value && typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+async function showTags(source, label) {
+  document.getElementById('filename').textContent = 'Файл: ' + label;
+  const tagsEl = document.getElementById('tags');
+  tagsEl.innerHTML = '<p class="muted">Чтение метаданных…</p>';
+  let data = null;
+  try {
+    data = await exifr.parse(source, OPTIONS);
+  } catch (e) {
+    tagsEl.innerHTML = `<p class="status-bad">Не удалось прочитать файл: ${e.message}</p>`;
+    return;
+  }
+  if (!data) {
+    tagsEl.innerHTML = '<p class="status-bad">Метаданные не найдены в этом файле.</p>';
+    return;
+  }
+  const rows = Object.keys(data).sort().map(k =>
+    `<tr><td>${k}</td><td>${formatValue(k, data[k])}</td></tr>`
+  ).join('');
+  tagsEl.innerHTML = `<table><tr><th>Тег</th><th>Значение</th></tr>${rows}</table>`;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const params = new URLSearchParams(location.search);
+  const file = params.get('file');
+  if (file && /^[\w.\-]+$/.test(file)) {
+    if (file === CONFIG.photoFile) {
+      markDone('q2a');
+      markDone('q2');
+    }
+    const preview = document.getElementById('preview');
+    preview.src = 'img/' + file;
+    preview.style.display = '';
+    showTags('img/' + file, file);
+  }
+
+  document.getElementById('upload').addEventListener('change', function (e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.name === CONFIG.photoFile) {
+      markDone('q2a');
+      markDone('q2');
+    }
+    const preview = document.getElementById('preview');
+    preview.src = URL.createObjectURL(f);
+    preview.style.display = '';
+    showTags(f, f.name);
+  });
+});
+</script>
+</body>
+</html>

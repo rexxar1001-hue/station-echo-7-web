@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — логи активности</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>ЛОГИ АКТИВНОСТИ ТЕРМИНАЛОВ</h1>
+  <div class="panel">
+    <p>Содержимое записей хранится в закодированном виде. Расшифровка выполняется
+      во внешнем инструменте.</p>
+    <p class="muted">Сверьте даты записей с журналом технического обслуживания.</p>
+  </div>
+  <div class="panel" id="logs"></div>
+  <div class="panel">
+    <a class="btn" href="terminal.html?target=logs">Открыть Python-терминал</a>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q5');
+
+// Видимы только дата и номер записи — смысл записи известен лишь по бумажному
+// журналу технического обслуживания у Аналитика.
+const LOGS = [
+  { date: '2024-08-14 11:02', ref: 'LOG-3182', b64: '0KLQtdGA0LzQuNC90LDQuyBCRVRBLVRSTS0wMiwg0L/Qu9Cw0L3QvtCy0LDRjyDQv9C10YDQtdC30LDQs9GA0YPQt9C60LA=' },
+  { date: '2024-08-27 19:41', ref: 'LOG-3390', b64: '0KLQtdGA0LzQuNC90LDQuyBERUxUQS1UUk0tMDksINC+0LHQvdC+0LLQu9C10L3QuNC1INC/0YDQvtGI0LjQstC60Lgg0LfQsNCy0LXRgNGI0LXQvdC+' },
+  { date: '2024-09-02 04:55', ref: 'LOG-4402', b64: '0KLQtdGA0LzQuNC90LDQuyBBTFBIQS1UUk0tMDEsINC60YDQsNGC0LrQvtCy0YDQtdC80LXQvdC90YvQuSDRgdCx0L7QuSDQv9C40YLQsNC90LjRjw==' },
+  { date: '2024-09-03 22:17', ref: 'LOG-4471', b64: '0KLQtdGA0LzQuNC90LDQuyBHQU1NQS1DQU0tMDQsINC90LXRgdCw0L3QutGG0LjQvtC90LjRgNC+0LLQsNC90L3Ri9C5INC00L7RgdGC0YPQvw==' },
+  { date: '2024-09-04 07:30', ref: 'LOG-4498', b64: '0KLQtdGA0LzQuNC90LDQuyBFUFNJTE9OLVRSTS0wNSwg0YjRgtCw0YLQvdGL0Lkg0L7QsdGF0L7QtCDQstGL0L/QvtC70L3QtdC9' },
+  { date: '2024-09-06 13:08', ref: 'LOG-4530', b64: '0KLQtdGA0LzQuNC90LDQuyBaRVRBLVRSTS0xMSwg0YHQvNC10L3QsCDQtNC10LbRg9GA0L3QvtCz0L4g0L7Qv9C10YDQsNGC0L7RgNCw' }
+];
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('logs').innerHTML = LOGS.map(l => `
+    <div class="log-line">
+      <span class="date">${l.date}</span>
+      <span>${l.ref}</span>
+      <span class="b64">${l.b64}</span>
+      <a class="btn" href="terminal.html?target=logs&value=${encodeURIComponent(l.b64)}">Декодировать</a>
+    </div>`).join('');
+});
+</script>
+</body>
+</html>

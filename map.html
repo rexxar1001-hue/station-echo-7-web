@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — карта</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  #map { height: 70vh; min-height: 420px; background: #04080a; border: 1px solid var(--border); }
+  .leaflet-container { background: #04080a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>КАРТА СТАНЦИИ</h1>
+  <div class="panel">
+    <p>Архивные точки острова. Перемещение — перетаскиванием, масштаб — колесом мыши.</p>
+    <p>
+      <input type="text" id="coords" placeholder="Перейти к координатам, например 45.8923, 13.0642" style="max-width:420px;display:inline-block;width:auto">
+      <button id="go" type="button">Перейти</button>
+    </p>
+    <p class="muted" id="msg"></p>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q2');
+
+const IMG_W = 1500, IMG_H = 1000;
+
+// Прочие точки архива — фон, никакой игровой функции
+const OTHER_POINTS = [
+  { code: 'AP-01', x: 180, y: 820 }, { code: 'AP-02', x: 310, y: 690 },
+  { code: 'AP-04', x: 980, y: 760 }, { code: 'AP-05', x: 1220, y: 610 },
+  { code: 'AP-06', x: 460, y: 260 }, { code: 'AP-08', x: 1340, y: 300 },
+  { code: 'AP-09', x: 790, y: 140 }, { code: 'AP-10', x: 250, y: 420 },
+  { code: 'AP-12', x: 1080, y: 180 }, { code: 'AP-13', x: 620, y: 880 },
+  { code: 'AP-14', x: 1410, y: 880 }, { code: 'AP-15', x: 900, y: 520 }
+];
+
+// Перевод игровых координат в координаты карты (линейная привязка к кластеру)
+function gameToMap(lat, lng) {
+  const anchor = CONFIG.mapPoints.find(p => p.code === CONFIG.correctPoint);
+  const y = anchor.y + (lat - CONFIG.coords.lat) * 10000;
+  const x = anchor.x + (lng - CONFIG.coords.lng) * 10000;
+  return [y, x];
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const map = L.map('map', { crs: L.CRS.Simple, minZoom: -3, maxZoom: 4, zoomControl: true });
+  const bounds = [[0, 0], [IMG_H, IMG_W]];
+  L.imageOverlay('img/island.png', bounds).addTo(map);
+  map.fitBounds(bounds);
+
+  const all = OTHER_POINTS.concat(CONFIG.mapPoints);
+  all.forEach(pt => {
+    L.circleMarker([pt.y, pt.x], { radius: 6, color: '#63d7ff', fillColor: '#63d7ff', fillOpacity: .6 })
+      .addTo(map)
+      .bindTooltip(pt.code, { permanent: false })
+      .on('click', () => openArchive(pt.code));
+  });
+
+  function openArchive(code) {
+    const msg = document.getElementById('msg');
+    if (code === CONFIG.correctPoint) {
+      markDone('q3');
+      msg.innerHTML = `<span class="status-ok">Точка ${code}: архив доступен.</span>
+        <a class="btn" href="radio-archive.html">Открыть архив точки ${code}</a>`;
+    } else {
+      msg.innerHTML = `<span class="muted">Точка ${code}: архив недоступен.</span>`;
+    }
+  }
+
+  document.getElementById('go').addEventListener('click', function () {
+    const raw = document.getElementById('coords').value.replace(/[^\d.,\-\s]/g, '');
+    const parts = raw.split(/[,\s]+/).filter(Boolean).map(Number);
+    if (parts.length < 2 || parts.some(isNaN)) {
+      document.getElementById('msg').textContent = 'Координаты не распознаны.';
+      return;
+    }
+    document.getElementById('msg').textContent = '';
+    map.flyTo(gameToMap(parts[0], parts[1]), 2);
+  });
+});
+</script>
+</body>
+</html>

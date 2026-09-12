@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — радиоархив AP-07</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  #spectrogram { max-width: 100%; border: 1px solid var(--border); display: none; margin-top: 12px; }
+  .file-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .file-list button.active { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>АРХИВЫ — РАДИОЗАПИСИ, ТОЧКА AP-07</h1>
+  <div class="panel">
+    <p>Записи повреждены. Подписи о назначении частот утрачены.</p>
+    <div class="file-list" id="files"></div>
+  </div>
+  <div class="panel">
+    <p id="current" class="muted">Файл не выбран.</p>
+    <p>
+      <button id="normal" type="button" disabled>Normal</button>
+      <button id="reverse" type="button" disabled>Reverse</button>
+      <button id="slow" type="button" disabled>Slow x0.5</button>
+      <button id="fast" type="button" disabled>Fast x2</button>
+      <button id="spec" type="button" disabled>Spectrogram</button>
+    </p>
+    <p class="muted" id="status"></p>
+    <img id="spectrogram" alt="спектрограмма">
+  </div>
+  <div class="panel" id="done" style="display:none">
+    <p class="status-ok">Метка со спектрограммы зафиксирована в деле операции.</p>
+    <a class="btn" href="dashboard.html">Личный кабинет</a>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q3');
+
+let ctx = null;
+let buffer = null;
+let currentFile = null;
+let usedReverse = false;
+let usedSpectrogram = false;
+
+async function loadFile(name) {
+  currentFile = name;
+  usedReverse = false;
+  usedSpectrogram = false;
+  document.getElementById('spectrogram').style.display = 'none';
+  document.getElementById('current').textContent = 'Выбран файл: ' + name;
+  document.getElementById('status').textContent = 'Загрузка…';
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    const data = await (await fetch(CONFIG.audioDir + name)).arrayBuffer();
+    buffer = await ctx.decodeAudioData(data);
+    document.getElementById('status').textContent = 'Запись загружена.';
+  } catch (e) {
+    buffer = null;
+    document.getElementById('status').innerHTML =
+      '<span class="status-bad">Запись не читается (файл-заглушка ещё не заменён).</span>';
+  }
+  ['normal', 'reverse', 'slow', 'fast', 'spec'].forEach(id => {
+    document.getElementById(id).disabled = false;
+  });
+}
+
+function play(rate, reversed) {
+  if (!buffer) return;
+  let buf = buffer;
+  if (reversed) {
+    buf = ctx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+      buf.copyToChannel(buffer.getChannelData(ch).slice().reverse(), ch);
+    }
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  src.connect(ctx.destination);
+  src.start();
+}
+
+function checkProgress() {
+  if (currentFile === CONFIG.correctAudio && usedReverse && usedSpectrogram) {
+    markDone('q4');
+    setData('callsign', CONFIG.callsign);
+    document.getElementById('done').style.display = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('files').innerHTML = CONFIG.audioFiles
+    .map(f => `<button type="button" data-file="${f}">${f}</button>`).join('');
+
+  document.getElementById('files').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-file]');
+    if (!btn) return;
+    document.querySelectorAll('#files button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadFile(btn.dataset.file);
+  });
+
+  document.getElementById('normal').addEventListener('click', () => play(1, false));
+  document.getElementById('slow').addEventListener('click', () => play(0.5, false));
+  document.getElementById('fast').addEventListener('click', () => play(2, false));
+  document.getElementById('reverse').addEventListener('click', () => {
+    usedReverse = true;
+    play(1, true);
+    checkProgress();
+  });
+  document.getElementById('spec').addEventListener('click', () => {
+    usedSpectrogram = true;
+    const img = document.getElementById('spectrogram');
+    const name = currentFile.replace(/\.wav$/, '');
+    img.onerror = () => { img.onerror = null; img.src = 'img/spectrogram_noise.png'; };
+    img.src = `img/spectrogram_${name}.png`;
+    img.style.display = img.style.display === 'none' ? '' : 'none';
+    checkProgress();
+  });
+});
+</script>
+</body>
+</html>

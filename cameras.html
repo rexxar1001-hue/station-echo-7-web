@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECHO-7 — видеонаблюдение</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>СИСТЕМА ВИДЕОНАБЛЮДЕНИЯ</h1>
+  <div class="panel">
+    <p>Камеры станции и прилегающих секторов. Прямой эфир с задержкой.</p>
+  </div>
+  <div class="panel">
+    <div class="grid" id="cams"></div>
+  </div>
+  <div class="panel" id="speaker-out"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/menu.js"></script>
+<script>
+requireDone('q6');
+
+const CAMERAS = [
+  'ALPHA-CAM-01', 'BETA-CAM-02', 'BETA-CAM-03', 'GAMMA-CAM-04', 'GAMMA-CAM-05',
+  'DELTA-CAM-06', 'EPSILON-CAM-07', 'ZETA-CAM-08', 'ETA-CAM-09', 'THETA-CAM-10'
+];
+
+const SPEAKER_LINE = 'Я… не могу говорить. Дневник. Мой личный дневник — там всё…';
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('cams').innerHTML = CAMERAS.map(c => {
+    const n = c.slice(-2);
+    return `<div class="tile" style="cursor:default">
+        <img src="img/camera_${n}_empty.jpg" alt="${c}" data-cam="${c}">
+        ${c}
+        <p><button type="button" data-speaker="${c}">Громкоговоритель</button></p>
+      </div>`;
+  }).join('');
+
+  // Периодическое появление силуэта — только на нужной камере
+  const target = document.querySelector(`img[data-cam="${CONFIG.cameraId}"]`);
+  if (target) {
+    const n = CONFIG.cameraId.slice(-2);
+    setInterval(() => {
+      target.src = `img/camera_${n}_figure.jpg`;
+      setTimeout(() => { target.src = `img/camera_${n}_empty.jpg`; }, 400);
+    }, 4000);
+  }
+
+  document.getElementById('cams').addEventListener('click', e => {
+    const btn = e.target.closest('[data-speaker]');
+    if (!btn) return;
+    const out = document.getElementById('speaker-out');
+    if (btn.dataset.speaker !== CONFIG.cameraId) {
+      out.innerHTML = '<p class="muted">Нет ответа с этой локации.</p>';
+      return;
+    }
+    markDone('q7');
+    out.innerHTML = `
+      <h2>${CONFIG.cameraId} — ГРОМКОГОВОРИТЕЛЬ ЛОКАЦИИ</h2>
+      <p>«${SPEAKER_LINE}»</p>
+      <audio id="speaker-audio" controls src="audio/speaker_gamma_cam_04.wav"></audio>
+      <p class="status-bad">Связь прервана. Сигнал потерян.</p>
+      <a class="btn" href="dashboard.html">Личный кабинет</a>`;
+    const audio = document.getElementById('speaker-audio');
+    if (audio) audio.play().catch(() => {});
+  });
+});
+</script>
+</body>
+</html>
