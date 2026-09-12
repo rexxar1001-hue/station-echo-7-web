@@ -56,7 +56,21 @@ async function runCode() {
   const source = document.getElementById('userInput').value;
   if (!source.trim()) return;
   out.textContent = 'Инициализация интерпретатора…';
-  pyodideReady = pyodideReady || loadPyodide();
+  pyodideReady = pyodideReady || loadPyodide().then(async py => {
+    // input() в браузере не имеет stdin — спрашиваем значение через окно браузера.
+    await py.runPythonAsync(`
+import builtins, js
+
+def _browser_input(prompt=''):
+    answer = js.window.prompt(str(prompt))
+    answer = '' if answer is None else str(answer)
+    print(str(prompt) + answer)
+    return answer
+
+builtins.input = _browser_input
+`);
+    return py;
+  });
   const pyodide = await pyodideReady;
   let printed = '';
   pyodide.setStdout({ batched: s => { printed += s + '\n'; } });
