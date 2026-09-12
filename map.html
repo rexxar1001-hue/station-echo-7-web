@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function popupHtml(pt) {
     const shots = (CONFIG.mapPhotos && pt.photos || []).map(id => {
       const file = `field_photo_${id}.jpg`;
-      return `<a href="exif-tool.html?file=${file}"><img src="img/${file}" alt="${file}" loading="lazy">
+      return `<a href="img/${file}" target="_blank" rel="noopener"><img src="img/${file}" alt="${file}" loading="lazy">
         <span class="file">${file}</span></a>`;
     }).join('');
     return `<div class="ap-popup"><b>${pt.code}</b><br>${pt.place || ''}${shots}</div>`;

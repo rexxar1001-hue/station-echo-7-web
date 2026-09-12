@@ -7,6 +7,7 @@
 const MENU_ITEMS = [
   { label: 'Терминал SQL', href: 'staff-db.html', after: 'q0' },
   { label: 'Архивы — Фотоархив', href: 'photos.html', after: 'q1' },
+  { label: 'Анализ метаданных', href: 'exif-tool.html', after: 'q1' },
   { label: 'Карта', href: 'map.html', after: 'q2' },
   { label: 'Архивы — Радиозаписи', href: 'radio-archive.html', after: 'q3' },
   { label: 'Позывные', href: 'nicknames.html', after: 'q4' },

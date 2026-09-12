@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ECHO-7 — чтение метаданных</title>
+<title>ECHO-7 — анализ метаданных</title>
 <link rel="icon" href="img/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -11,18 +11,18 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>ИНСТРУМЕНТ ЧТЕНИЯ МЕТАДАННЫХ ИЗОБРАЖЕНИЙ</h1>
+  <h1>АНАЛИЗ МЕТАДАННЫХ</h1>
   <div class="panel">
+    <p>Загрузите файл с диска — инструмент выведет сырые теги без интерпретации.</p>
     <p id="filename" class="muted">Файл не выбран.</p>
     <p><input type="file" id="upload" accept="image/*"></p>
-    <p class="muted">Инструмент выводит сырые теги файла без интерпретации.</p>
   </div>
   <div class="panel">
     <img id="preview" alt="" style="max-width:280px;display:none">
     <div id="tags"></div>
   </div>
   <div class="panel">
-    <a class="btn" href="photos.html">Назад в фотоархив</a>
+    <a class="btn" href="photos.html">Фотоархив</a>
     <a class="btn" href="dashboard.html">Личный кабинет</a>
   </div>
 </div>
@@ -70,19 +70,6 @@ async function showTags(source, label) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  const params = new URLSearchParams(location.search);
-  const file = params.get('file');
-  if (file && /^[\w.\-]+$/.test(file)) {
-    if (file === CONFIG.photoFile) {
-      markDone('q2a');
-      markDone('q2');
-    }
-    const preview = document.getElementById('preview');
-    preview.src = 'img/' + file;
-    preview.style.display = '';
-    showTags('img/' + file, file);
-  }
-
   document.getElementById('upload').addEventListener('change', function (e) {
     const f = e.target.files[0];
     if (!f) return;

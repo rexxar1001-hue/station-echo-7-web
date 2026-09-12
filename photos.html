@@ -8,6 +8,14 @@
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .lightbox { position: fixed; inset: 0; background: rgba(2, 6, 8, .92); display: none; z-index: 50;
+    align-items: center; justify-content: center; flex-direction: column; gap: 12px; padding: 24px; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: min(1100px, 92vw); max-height: 74vh; border: 1px solid var(--border); }
+  .lightbox .bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .lightbox .name { color: var(--fg-dim); font-size: 13px; }
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -17,6 +25,15 @@
   </div>
   <div class="panel">
     <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lb-img" alt="">
+  <div class="bar">
+    <span class="name" id="lb-name"></span>
+    <a class="btn" id="lb-download" download>Скачать снимок</a>
+    <button class="btn" type="button" id="lb-close">Закрыть</button>
   </div>
 </div>
 
@@ -36,10 +53,37 @@ document.addEventListener('DOMContentLoaded', function () {
   const grid = document.getElementById('grid');
   grid.innerHTML = PHOTO_IDS.map(id => {
     const file = `field_photo_${id}.jpg`;
-    return `<a class="tile" href="exif-tool.html?file=${file}">
+    return `<div class="tile" data-file="${file}">
         <img src="img/${file}" alt="${file}" loading="lazy">${file}
-      </a>`;
+      </div>`;
   }).join('');
+
+  const box = document.getElementById('lightbox');
+  const img = document.getElementById('lb-img');
+  const name = document.getElementById('lb-name');
+  const download = document.getElementById('lb-download');
+
+  function openBox(file) {
+    img.src = 'img/' + file;
+    img.alt = file;
+    name.textContent = file;
+    download.href = 'img/' + file;
+    download.setAttribute('download', file);
+    box.classList.add('open');
+  }
+
+  function closeBox() {
+    box.classList.remove('open');
+    img.src = '';
+  }
+
+  grid.addEventListener('click', e => {
+    const tile = e.target.closest('[data-file]');
+    if (tile) openBox(tile.dataset.file);
+  });
+  document.getElementById('lb-close').addEventListener('click', closeBox);
+  box.addEventListener('click', e => { if (e.target === box) closeBox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBox(); });
 });
 </script>
 </body>

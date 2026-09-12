@@ -41,8 +41,8 @@ python3 -m http.server 8000
 |---|---|---|
 | 0 | `index.html` | Логин `Viktor Orel`, пароль `bKlb85kA`. Подсказка — HTML-комментарий в исходном коде страницы (id 087) |
 | 1 | `staff-db.html` | `SELECT * FROM employees WHERE sector = 'Lambda' AND clearance = 'Omega';` → id 087 |
-| 2 | `photos.html` → `exif-tool.html` | Файл `field_photo_087.jpg`, EXIF GPS → координаты **45.8923, 13.0642** (теги GPSDest — ложный след) |
-| 3 | `map.html` | Ввести координаты → кластер AP-03 / AP-07 / AP-11, верная точка — **AP-07** |
+| 2 | `photos.html` → `exif-tool.html` | Открыть `field_photo_087.jpg`, скачать снимок и загрузить его в «Анализ метаданных» → GPS **45.8923, 13.0642** (теги GPSDest — ложный след; у остальных фото GPS тоже есть, но чужие) |
+| 3 | `map.html` | Ввести координаты → мачта на западном обрыве, верная точка — **AP-07** |
 | 4 | `radio-archive.html` | Файл **rec_142.7.wav** (частоту называет Аналитик), режимы Reverse + Spectrogram → метка **SHADOW-01** |
 | 5 | `nicknames.html` → `heartbeat.html` | SHADOW-01 = id 087. Схема: Красный→3, Синий→1, Жёлтый→4, Зелёный→2 → статус CRITICAL |
 | 6 | `logs.html` → `terminal.html` | Аналитик по журналу ТО определяет запись **2024-09-03 22:17 (LOG-4471)** → декодируется в «Терминал GAMMA-CAM-04, несанкционированный доступ» |
@@ -65,8 +65,8 @@ python3 -m http.server 8000
 index.html              квест 0 — аварийный доступ
 dashboard.html          личный кабинет: меню + уведомления
 staff-db.html           квесты 1 и 8.1 — единый SQL-терминал (employees и notes)
-photos.html             квест 2.1 — фотоархив
-exif-tool.html          квест 2.2 — чтение EXIF
+photos.html             квест 2.1 — фотоархив (просмотр и скачивание снимков)
+exif-tool.html          квест 2.2 — анализ метаданных загруженного файла
 map.html                квест 3 — карта
 radio-archive.html      квест 4 — радиоархив AP-07
 nicknames.html          квест 5.1 — позывные
