@@ -66,8 +66,8 @@ const NOTIFICATIONS = [
     after: 'q7',
     title: 'ЛИЧНЫЙ ДНЕВНИК',
     text: 'Он упомянул личный дневник. Возможно, о нём есть служебные записи.',
-    linkText: 'Терминал — SQL (notes)',
-    linkHref: 'notes-db.html'
+    linkText: 'Терминал SQL',
+    linkHref: 'staff-db.html'
   },
   {
     id: 'n9',

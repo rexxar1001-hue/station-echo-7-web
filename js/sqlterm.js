@@ -7,7 +7,7 @@ const FORBIDDEN = /pragma|sqlite_master|sqlite_sequence|\.schema|schema|attach|d
 
 async function initSqlTerminal(options) {
   const {
-    inputId, runId, outputId, allowedTable, onResult
+    inputId, runId, outputId, allowedTables, onResult
   } = options;
 
   const output = document.getElementById(outputId);
@@ -43,7 +43,7 @@ async function initSqlTerminal(options) {
       output.innerHTML = '<p class="status-bad">Разрешены только запросы SELECT</p>';
       return;
     }
-    if (allowedTable && !new RegExp(`\\b${allowedTable}\\b`, 'i').test(sql)) {
+    if (allowedTables && !allowedTables.some(t => new RegExp(`\\b${t}\\b`, 'i').test(sql))) {
       output.innerHTML = `<p class="status-bad">Таблица недоступна с этого терминала</p>`;
       return;
     }

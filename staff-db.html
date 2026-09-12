@@ -8,12 +8,9 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>ТЕРМИНАЛ SQL — КАДРОВАЯ БАЗА</h1>
+  <h1>ТЕРМИНАЛ SQL — БАЗА СТАНЦИИ</h1>
   <div class="panel">
-    <p>Задание: найдите сотрудника, назначенного в сектор Lambda, с уровнем допуска Omega.
-      Извлеките сведения о нём.</p>
-    <p class="muted">Доступна таблица <code>employees</code>. Структура столбцов не публикуется.
-      Разрешены только запросы SELECT.</p>
+    <p class="muted">Структура базы не публикуется. Разрешены только запросы SELECT.</p>
   </div>
   <div class="panel">
     <textarea id="sql" rows="4" spellcheck="false" placeholder="SELECT ..."></textarea>
@@ -21,10 +18,7 @@
       <span class="muted">или Ctrl+Enter</span></p>
     <div id="out"></div>
   </div>
-  <div class="panel" id="done" style="display:none">
-    <p class="status-ok">Запись найдена. Данные сотрудника зафиксированы в деле операции.</p>
-    <a class="btn" href="dashboard.html">Вернуться в личный кабинет</a>
-  </div>
+  <div class="panel" id="done" style="display:none"></div>
 </div>
 
 <script src="https://sql.js.org/dist/sql-wasm.js"></script>
@@ -41,12 +35,27 @@ document.addEventListener('DOMContentLoaded', function () {
     inputId: 'sql',
     runId: 'run',
     outputId: 'out',
-    allowedTable: 'employees',
+    allowedTables: ['employees', 'notes'],
     onResult(columns, values) {
+      const done = document.getElementById('done');
       const idIndex = columns.indexOf('id');
-      if (values.length === 1 && idIndex >= 0 && Number(values[0][idIndex]) === CONFIG.target.id) {
+      const noteIndex = columns.indexOf('note');
+      if (idIndex < 0) return;
+
+      if (noteIndex >= 0) {
+        const row = values.find(r => Number(r[idIndex]) === CONFIG.target.id);
+        if (!row) return;
+        done.style.display = '';
+        done.innerHTML = `<p>Заметка сотрудника ${String(CONFIG.target.id).padStart(3, '0')} хранится в закодированном виде.</p>
+          <p><a class="btn" href="terminal.html?target=notes&value=${encodeURIComponent(row[noteIndex])}">Открыть Python-терминал</a></p>`;
+        return;
+      }
+
+      if (values.length === 1 && Number(values[0][idIndex]) === CONFIG.target.id) {
         markDone('q1');
-        document.getElementById('done').style.display = '';
+        done.style.display = '';
+        done.innerHTML = '<p class="status-ok">Запись найдена. Данные сотрудника зафиксированы в деле операции.</p>'
+          + '<a class="btn" href="dashboard.html">Вернуться в личный кабинет</a>';
       }
     }
   });

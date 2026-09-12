@@ -5,14 +5,13 @@
 */
 
 const MENU_ITEMS = [
-  { label: 'Терминалы — SQL', href: 'staff-db.html', after: 'q0' },
+  { label: 'Терминал SQL', href: 'staff-db.html', after: 'q0' },
   { label: 'Архивы — Фотоархив', href: 'photos.html', after: 'q1' },
   { label: 'Карта', href: 'map.html', after: 'q2' },
   { label: 'Архивы — Радиозаписи', href: 'radio-archive.html', after: 'q3' },
   { label: 'Позывные', href: 'nicknames.html', after: 'q4' },
   { label: 'Логи активности', href: 'logs.html', after: 'q5' },
-  { label: 'Видеонаблюдение', href: 'cameras.html', after: 'q6' },
-  { label: 'Терминалы — SQL (notes)', href: 'notes-db.html', after: 'q7' }
+  { label: 'Видеонаблюдение', href: 'cameras.html', after: 'q6' }
 ];
 
 function isUnlocked(item) {

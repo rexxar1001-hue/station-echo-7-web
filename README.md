@@ -47,7 +47,7 @@ python3 -m http.server 8000
 | 5 | `nicknames.html` → `heartbeat.html` | SHADOW-01 = id 087. Схема: Красный→3, Синий→1, Жёлтый→4, Зелёный→2 → статус CRITICAL |
 | 6 | `logs.html` → `terminal.html` | Аналитик по журналу ТО определяет запись **2024-09-03 22:17 (LOG-4471)** → декодируется в «Терминал GAMMA-CAM-04, несанкционированный доступ» |
 | 7 | `cameras.html` | Камера **GAMMA-CAM-04** → «Громкоговоритель» → упоминание дневника |
-| 8 | `notes-db.html` → `terminal.html` → `diary-vorel-087.html` | `SELECT * FROM notes WHERE id = 087;` → строка в **двойном Base64** → путь `diary-vorel-087.html`, там спрятан финальный код |
+| 8 | `staff-db.html` → `terminal.html` → `diary-vorel-087.html` | `SELECT * FROM notes WHERE id = 087;` → строка в **двойном Base64** → путь `diary-vorel-087.html`, там спрятан финальный код |
 
 На сайте видны только даты и номера записей логов — смысл записи известен только
 Аналитику по бумажному журналу технического обслуживания. Соответствие дат нужно
@@ -64,7 +64,7 @@ python3 -m http.server 8000
 ```
 index.html              квест 0 — аварийный доступ
 dashboard.html          личный кабинет: меню + уведомления
-staff-db.html           квест 1 — SQL (employees)
+staff-db.html           квесты 1 и 8.1 — единый SQL-терминал (employees и notes)
 photos.html             квест 2.1 — фотоархив
 exif-tool.html          квест 2.2 — чтение EXIF
 map.html                квест 3 — карта
@@ -74,7 +74,6 @@ heartbeat.html          квест 5.2 — мини-игра «соедини п
 logs.html               квест 6.1 — закодированные логи
 terminal.html           квесты 6.2 и 8.2 — Python-терминал (Pyodide)
 cameras.html            квест 7 — видеонаблюдение
-notes-db.html           квест 8.1 — SQL (notes)
 diary-vorel-087.html    квест 8.3 — скрытая страница дневника (нет ссылок в меню)
 reset.html              служебная страница: сброс прогресса
 css/style.css           тема «тёмный терминал»
