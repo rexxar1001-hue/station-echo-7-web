@@ -26,9 +26,10 @@
   <div class="panel">
     <p>Архивные точки острова. Перемещение — перетаскиванием, масштаб — колесом мыши.</p>
     <p>
-      <input type="text" id="coords" placeholder="Перейти к координатам, например 45.8923, 13.0642" style="max-width:420px;display:inline-block;width:auto">
+      <input type="text" id="coords" placeholder="Перейти к координатам" style="max-width:420px;display:inline-block;width:auto">
       <button id="go" type="button">Перейти</button>
     </p>
+    <p class="muted">Формат любой: <code>45.8923, 13.0642</code> или <code>45° 53' 32.28" N 13° 03' 51.12" E</code>.</p>
     <p class="muted" id="msg"></p>
   </div>
   <div id="map"></div>
@@ -43,6 +44,27 @@
 requireDone('q2');
 
 const IMG_W = 1500, IMG_H = 1000;
+
+// Разбор ввода: десятичные градусы или градусы-минуты-секунды с полушарием.
+function parseCoords(input) {
+  const text = String(input).trim();
+  const dms = text.match(/(\d+(?:[.,]\d+)?)\D+(\d+(?:[.,]\d+)?)\D+(\d+(?:[.,]\d+)?)\s*["″”]?\s*([NSEWNSСЮВЗ])/gi);
+  if (dms && dms.length >= 2) {
+    const values = dms.slice(0, 2).map(part => {
+      const [, d, m, s, hemi] = part.match(/(\d+(?:[.,]\d+)?)\D+(\d+(?:[.,]\d+)?)\D+(\d+(?:[.,]\d+)?)\s*["″”]?\s*([NSEWNSСЮВЗ])/i);
+      const num = k => parseFloat(k.replace(',', '.'));
+      const sign = /[SWЮЗ]/i.test(hemi) ? -1 : 1;
+      const letter = hemi.toUpperCase();
+      return { value: sign * (num(d) + num(m) / 60 + num(s) / 3600), isLat: 'NSСЮ'.includes(letter) };
+    });
+    const lat = values.find(v => v.isLat) || values[0];
+    const lng = values.find(v => v !== lat);
+    return lng ? [lat.value, lng.value] : null;
+  }
+  const decimals = text.replace(/[^\d.,\-\s]/g, '').split(/[,\s]+/).filter(Boolean).map(Number);
+  if (decimals.length < 2 || decimals.slice(0, 2).some(isNaN)) return null;
+  return [decimals[0], decimals[1]];
+}
 
 // Перевод игровых координат в координаты карты (линейная привязка к кластеру)
 function gameToMap(lat, lng) {
@@ -86,15 +108,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  document.getElementById('go').addEventListener('click', function () {
-    const raw = document.getElementById('coords').value.replace(/[^\d.,\-\s]/g, '');
-    const parts = raw.split(/[,\s]+/).filter(Boolean).map(Number);
-    if (parts.length < 2 || parts.some(isNaN)) {
+  function goToCoords() {
+    const pair = parseCoords(document.getElementById('coords').value);
+    if (!pair) {
       document.getElementById('msg').textContent = 'Координаты не распознаны.';
       return;
     }
     document.getElementById('msg').textContent = '';
-    map.flyTo(gameToMap(parts[0], parts[1]), 2);
+    map.flyTo(gameToMap(pair[0], pair[1]), 2);
+  }
+
+  document.getElementById('go').addEventListener('click', goToCoords);
+  document.getElementById('coords').addEventListener('keydown', e => {
+    if (e.key === 'Enter') goToCoords();
   });
 });
 </script>
