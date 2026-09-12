@@ -12,6 +12,12 @@
 <style>
   #map { height: 70vh; min-height: 420px; background: #04080a; border: 1px solid var(--border); }
   .leaflet-container { background: #04080a; }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #0b1416; color: #cfe6e2; border: 1px solid var(--border); }
+  .leaflet-popup-content a { color: #63d7ff; }
+  .ap-popup { font: 13px/1.4 inherit; }
+  .ap-popup b { letter-spacing: .05em; }
+  .ap-popup img { display: block; width: 220px; margin: 6px 0 2px; border: 1px solid #2a3b40; }
+  .ap-popup .file { font-size: 11px; opacity: .7; }
 </style>
 </head>
 <body>
@@ -38,16 +44,6 @@ requireDone('q2');
 
 const IMG_W = 1500, IMG_H = 1000;
 
-// Прочие точки архива — фон, никакой игровой функции
-const OTHER_POINTS = [
-  { code: 'AP-01', x: 180, y: 820 }, { code: 'AP-02', x: 310, y: 690 },
-  { code: 'AP-04', x: 980, y: 760 }, { code: 'AP-05', x: 1220, y: 610 },
-  { code: 'AP-06', x: 460, y: 260 }, { code: 'AP-08', x: 1340, y: 300 },
-  { code: 'AP-09', x: 790, y: 140 }, { code: 'AP-10', x: 250, y: 420 },
-  { code: 'AP-12', x: 1080, y: 180 }, { code: 'AP-13', x: 620, y: 880 },
-  { code: 'AP-14', x: 1410, y: 880 }, { code: 'AP-15', x: 900, y: 520 }
-];
-
 // Перевод игровых координат в координаты карты (линейная привязка к кластеру)
 function gameToMap(lat, lng) {
   const anchor = CONFIG.mapPoints.find(p => p.code === CONFIG.correctPoint);
@@ -59,16 +55,25 @@ function gameToMap(lat, lng) {
 document.addEventListener('DOMContentLoaded', function () {
   const map = L.map('map', { crs: L.CRS.Simple, minZoom: -3, maxZoom: 4, zoomControl: true });
   const bounds = [[0, 0], [IMG_H, IMG_W]];
-  L.imageOverlay('img/island.png', bounds).addTo(map);
+  L.imageOverlay('img/island.jpg', bounds).addTo(map);
   map.fitBounds(bounds);
 
-  const all = OTHER_POINTS.concat(CONFIG.mapPoints);
-  all.forEach(pt => {
+  CONFIG.mapPoints.forEach(pt => {
     L.circleMarker([pt.y, pt.x], { radius: 6, color: '#63d7ff', fillColor: '#63d7ff', fillOpacity: .6 })
       .addTo(map)
       .bindTooltip(pt.code, { permanent: false })
+      .bindPopup(popupHtml(pt), { maxWidth: 260 })
       .on('click', () => openArchive(pt.code));
   });
+
+  function popupHtml(pt) {
+    const shots = (CONFIG.mapPhotos && pt.photos || []).map(id => {
+      const file = `field_photo_${id}.jpg`;
+      return `<a href="exif-tool.html?file=${file}"><img src="img/${file}" alt="${file}" loading="lazy">
+        <span class="file">${file}</span></a>`;
+    }).join('');
+    return `<div class="ap-popup"><b>${pt.code}</b><br>${pt.place || ''}${shots}</div>`;
+  }
 
   function openArchive(code) {
     const msg = document.getElementById('msg');

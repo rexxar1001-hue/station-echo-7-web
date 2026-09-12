@@ -104,7 +104,7 @@ def make_island():
     for y in range(0, h, 100):
         d.line([(0, y), (w, y)], fill=(16, 26, 30))
     d.text((20, 20), "ISLAND MAP PLACEHOLDER 1500x1000", fill=(120, 200, 170))
-    img.save(os.path.join(IMG, "island.png"))
+    img.save(os.path.join(IMG, "island.jpg"))
 
 
 def make_spectrograms():
