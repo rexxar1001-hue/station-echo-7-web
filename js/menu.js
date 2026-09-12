@@ -31,10 +31,19 @@ function renderHeader() {
     <a class="brand" href="dashboard.html">ECHO-7</a>
     <nav>${links}</nav>
     <span class="spacer"></span>
-    <button class="envelope" type="button" title="Входящие">&#9993;</button>`;
+    <button class="envelope" type="button" title="Входящие">&#9993;</button>
+    <button class="logout" type="button">Выход</button>`;
   document.body.prepend(header);
   header.querySelector('.envelope').addEventListener('click', showInbox);
+  header.querySelector('.logout').addEventListener('click', logout);
   renderEnvelopeState();
+}
+
+// Выход из системы: прогресс стирается, операция начинается с квеста 0.
+function logout() {
+  if (!confirm('Выйти из системы? Прогресс операции будет сброшен.')) return;
+  resetProgress();
+  window.location.href = 'index.html';
 }
 
 document.addEventListener('DOMContentLoaded', renderHeader);

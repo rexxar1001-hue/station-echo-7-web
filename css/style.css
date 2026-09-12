@@ -52,6 +52,17 @@ header.topbar nav {
 
 header.topbar .spacer { flex: 1; }
 
+header.topbar .logout {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--fg-dim);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+}
+
+header.topbar .logout:hover { color: var(--fg); border-color: var(--accent); }
+
 .envelope {
   cursor: pointer;
   position: relative;
