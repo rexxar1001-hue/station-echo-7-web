@@ -46,14 +46,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }).join('');
 
   // Периодическое появление силуэта — только на нужной камере
-  const target = document.querySelector(`img[data-cam="${CONFIG.cameraId}"]`);
-  if (target) {
-    const n = CONFIG.cameraId.slice(-2);
-    setInterval(() => {
-      target.src = `img/camera_${n}_figure.jpg`;
-      setTimeout(() => { target.src = `img/camera_${n}_empty.jpg`; }, 400);
-    }, 4000);
-  }
+  //const target = document.querySelector(`img[data-cam="${CONFIG.cameraId}"]`);
+  //if (target) {
+   // const n = CONFIG.cameraId.slice(-2);
+  //  setInterval(() => {
+   //   target.src = `img/camera_${n}_figure.jpg`;
+  //    setTimeout(() => { target.src = `img/camera_${n}_empty.jpg`; }, 400);
+  //  }, 4000);
+ // }
 
   document.getElementById('cams').addEventListener('click', e => {
     const btn = e.target.closest('[data-speaker]');
