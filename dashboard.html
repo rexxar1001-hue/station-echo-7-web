@@ -66,18 +66,17 @@
 requireDone('q0', 'index.html');
 
 const SECTIONS = [
-  { href: 'staff-db.html', title: 'Терминал SQL', desc: 'База станции, запросы SELECT' },
-  { href: 'photos.html', title: 'Архивы — Фотоархив', desc: 'Полевые снимки сотрудников' },
-  { href: 'exif-tool.html', title: 'Анализ EXIF', desc: 'Метаданные снимков, координаты съёмки' },
-  { href: 'map.html', title: 'Карта острова', desc: 'Точки приёма AP-01…AP-15' },
-  { href: 'radio-archive.html', title: 'Архивы — Радиозаписи', desc: 'Записи по частотам, реверс и спектрограмма' },
-  { href: 'nicknames.html', title: 'Позывные', desc: 'Соответствие позывных и сотрудников' },
-  { href: 'heartbeat.html', title: 'Узел связи', desc: 'Коммутация линий, восстановление канала' },
-  { href: 'logs.html', title: 'Логи активности', desc: 'Системный журнал, записи Base64' },
-  { href: 'terminal.html', title: 'Python-терминал', desc: 'Декодирование служебных строк' },
-  { href: 'cameras.html', title: 'Видеонаблюдение', desc: '10 камер станции' },
-  { href: 'index.html', title: 'Экран входа', desc: 'Аварийный доступ ECHO-7' },
-  { href: 'reset.html', title: 'Служебное — сброс', desc: 'Очистка прогресса операции' }
+  { href: 'staff-db.html', title: 'Терминал SQL', desc: 'Реляционное хранилище, консоль запросов' },
+  { href: 'photos.html', title: 'Архивы — Фотоархив', desc: 'Хранилище полевых медиафайлов (JPEG)' },
+  { href: 'exif-tool.html', title: 'Анализ метаданных', desc: 'Инспектор служебных тегов файлов' },
+  { href: 'map.html', title: 'Карта острова', desc: 'Топографическая схема, реестр точек' },
+  { href: 'radio-archive.html', title: 'Архивы — Радиозаписи', desc: 'Хранилище приёмных записей, DSP-обработка' },
+  { href: 'nicknames.html', title: 'Позывные', desc: 'Реестр оперативных позывных' },
+  { href: 'heartbeat.html', title: 'Узел связи', desc: 'Аппаратная коммутация, диагностика каналов' },
+  { href: 'logs.html', title: 'Логи активности', desc: 'Системный журнал сервисов станции' },
+  { href: 'terminal.html', title: 'Python-терминал', desc: 'Интерпретатор Python 3.11, служебная среда' },
+  { href: 'cameras.html', title: 'Видеонаблюдение', desc: 'Мониторинг периметра и помещений' },
+  { href: 'index.html', title: 'Экран входа', desc: 'Аварийный доступ ECHO-7' }
 ];
 
 document.addEventListener('DOMContentLoaded', function () {
