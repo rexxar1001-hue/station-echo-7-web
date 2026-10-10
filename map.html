@@ -114,7 +114,18 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     document.getElementById('msg').textContent = '';
-    map.flyTo(gameToMap(pair[0], pair[1]), 2);
+    const target = gameToMap(pair[0], pair[1]);
+    const anchor = CONFIG.mapPoints.find(p => p.code === CONFIG.correctPoint);
+    const nearCluster = Math.hypot(target[0] - anchor.y, target[1] - anchor.x) < 40;
+    if (nearCluster) {
+      // Верные координаты: показать сразу весь кластер из трёх точек, чтобы выбирать среди них.
+      const bounds = L.latLngBounds(CONFIG.mapPoints
+        .filter(p => CONFIG.clusterPoints.includes(p.code))
+        .map(p => [p.y, p.x]));
+      map.flyToBounds(bounds, { padding: [60, 60], maxZoom: 2 });
+    } else {
+      map.flyTo(target, 2);
+    }
   }
 
   document.getElementById('go').addEventListener('click', goToCoords);
