@@ -11,6 +11,8 @@ function isDone(q) {
 
 function markDone(q) {
   localStorage.setItem(q, 'true');
+  // Зафиксировать время получения уведомления, которое открывает этот квест (если оно загружено).
+  if (typeof stampNotifications === 'function') stampNotifications();
 }
 
 function requireDone(q, redirectTo = 'dashboard.html') {

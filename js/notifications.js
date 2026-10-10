@@ -91,7 +91,27 @@ function availableNotifications() {
   return list;
 }
 
+// Время получения: фиксируется один раз, в момент, когда уведомление становится доступным
+// (вызывается из markDone() и при загрузке страниц). Хранится в notif_time_<id>.
+function stampNotifications() {
+  availableNotifications().forEach(n => {
+    const key = 'notif_time_' + n.id;
+    try {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, String(Date.now()));
+    } catch (e) { /* localStorage недоступен — дата подставится текущая */ }
+  });
+}
+
+function notificationTime(n) {
+  let raw = null;
+  try { raw = Number(localStorage.getItem('notif_time_' + n.id)); } catch (e) { /* см. выше */ }
+  return new Date(raw || Date.now()).toLocaleString('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+}
+
 function pendingNotification() {
+  stampNotifications();
   return availableNotifications().find(n => localStorage.getItem('notif_' + n.id) !== 'shown');
 }
 
@@ -104,6 +124,7 @@ function showNotification(n, onClose) {
   backdrop.innerHTML = `
     <div class="modal">
       <h3>ВХОДЯЩЕЕ СООБЩЕНИЕ — ${n.title}</h3>
+      <p class="note-time">${notificationTime(n)}</p>
       <p>${n.text}</p>
       <div class="modal-actions">
         ${link}
@@ -119,13 +140,25 @@ function showNotification(n, onClose) {
   document.body.appendChild(backdrop);
 }
 
+// true — во «Входящих» открыто только самое новое сообщение, старые свёрнуты (раскрываются кликом);
+// false — все сообщения раскрыты, свернуть можно вручную.
+const INBOX_COLLAPSE_OLD = true;
+
 function showInbox() {
+  stampNotifications();
   const list = availableNotifications();
   list.forEach(n => localStorage.setItem('notif_' + n.id, 'shown'));
+  const newestId = list.length ? list[list.length - 1].id : null;
+  // Новые сверху; самое новое подсвечено яркой рамкой. Блок сворачивается по клику на заголовок.
   const items = list.length
-    ? list.map(n => `<div class="panel"><strong>${n.title}</strong><br>${n.text}${
-        n.linkHref ? `<br><a href="${n.linkHref}">${n.linkText}</a>` : ''
-      }</div>`).join('')
+    ? list.slice().reverse().map(n => {
+        const isNewest = n.id === newestId;
+        const open = isNewest || !INBOX_COLLAPSE_OLD;
+        return `<details class="panel note${isNewest ? ' newest' : ''}"${open ? ' open' : ''}>
+          <summary><span class="note-title">${n.title}</span>${isNewest ? '<span class="badge">НОВОЕ</span>' : ''}<span class="note-date">${notificationTime(n)}</span></summary>
+          <p>${n.text}</p>${n.linkHref ? `<p><a href="${n.linkHref}">${n.linkText}</a></p>` : ''}
+        </details>`;
+      }).join('')
     : '<p class="muted">Входящих сообщений нет.</p>';
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
