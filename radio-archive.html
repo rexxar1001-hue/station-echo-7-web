@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const name = currentFile.replace(/\.wav$/, '');
     img.onerror = () => { img.onerror = null; img.src = 'img/spectrogram_noise.png'; };
     img.src = `img/spectrogram_${name}.png`;
-    img.style.display = img.style.display === 'none' ? '' : 'none';
+    img.style.display = 'block';
     checkProgress();
   });
 });
