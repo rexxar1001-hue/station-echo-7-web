@@ -79,8 +79,16 @@ const NOTIFICATIONS = [
   }
 ];
 
+// Строгий порядок: уведомление доступно, только если пройден его квест
+// И все предыдущие. Цепочка обрывается на первом непройденном квесте,
+// поэтому прохождение «из середины» не открывает последующие сообщения.
 function availableNotifications() {
-  return NOTIFICATIONS.filter(n => isDone(n.after));
+  const list = [];
+  for (const n of NOTIFICATIONS) {
+    if (!isDone(n.after)) break;
+    list.push(n);
+  }
+  return list;
 }
 
 function pendingNotification() {
