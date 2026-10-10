@@ -36,24 +36,18 @@ const CAMERAS = [
 const SPEAKER_LINE = 'Я… не могу говорить. Дневник. Мой личный дневник — там всё…';
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Все камеры — статичные кадры; камера из CONFIG.cameraId показывает зацикленную GIF-запись.
+  // Пока GIF-файла нет, вместо него подставляется обычный кадр camera_NN_empty.jpg.
   document.getElementById('cams').innerHTML = CAMERAS.map(c => {
     const n = c.slice(-2);
+    const still = `img/camera_${n}_empty.jpg`;
+    const src = c === CONFIG.cameraId ? `img/camera_${n}.gif` : still;
     return `<div class="tile" style="cursor:default">
-        <img src="img/camera_${n}_empty.jpg" alt="${c}" data-cam="${c}">
+        <img src="${src}" alt="${c}" data-cam="${c}" onerror="this.onerror=null;this.src='${still}'">
         ${c}
         <p><button type="button" data-speaker="${c}">Громкоговоритель</button></p>
       </div>`;
   }).join('');
-
-  // Периодическое появление силуэта — только на нужной камере
-  //const target = document.querySelector(`img[data-cam="${CONFIG.cameraId}"]`);
-  //if (target) {
-   // const n = CONFIG.cameraId.slice(-2);
-  //  setInterval(() => {
-   //   target.src = `img/camera_${n}_figure.jpg`;
-  //    setTimeout(() => { target.src = `img/camera_${n}_empty.jpg`; }, 400);
-  //  }, 4000);
- // }
 
   document.getElementById('cams').addEventListener('click', e => {
     const btn = e.target.closest('[data-speaker]');
