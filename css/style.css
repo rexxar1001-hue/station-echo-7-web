@@ -170,7 +170,7 @@ pre {
 }
 
 .tile:hover { border-color: var(--accent); }
-.tile img { width: 100%; display: block; margin-bottom: 6px; }
+.tile img, .tile video { width: 100%; display: block; margin-bottom: 6px; background: #000; }
 
 .status-ok { color: var(--fg); }
 .status-bad { color: var(--warn); }

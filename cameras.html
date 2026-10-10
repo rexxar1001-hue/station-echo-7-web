@@ -36,18 +36,35 @@ const CAMERAS = [
 const SPEAKER_LINE = 'Я… не могу говорить. Дневник. Мой личный дневник — там всё…';
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Все камеры — статичные кадры; камера из CONFIG.cameraId показывает зацикленную GIF-запись.
-  // Пока GIF-файла нет, вместо него подставляется обычный кадр camera_NN_empty.jpg.
+  // Все камеры — статичные кадры; камера из CONFIG.cameraId показывает зацикленное MP4 без
+  // элементов управления (выглядит как анимированная картинка). Пока файла camera_NN.mp4 нет
+  // (или браузер не может его проиграть), показывается обычный кадр camera_NN_empty.jpg.
   document.getElementById('cams').innerHTML = CAMERAS.map(c => {
     const n = c.slice(-2);
     const still = `img/camera_${n}_empty.jpg`;
-    const src = c === CONFIG.cameraId ? `img/camera_${n}.gif` : still;
+    const view = c === CONFIG.cameraId
+      ? `<video src="img/camera_${n}.mp4" poster="${still}" data-cam="${c}" aria-label="${c}"
+               autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>`
+      : `<img src="${still}" alt="${c}" data-cam="${c}">`;
     return `<div class="tile" style="cursor:default">
-        <img src="${src}" alt="${c}" data-cam="${c}" onerror="this.onerror=null;this.src='${still}'">
+        ${view}
         ${c}
         <p><button type="button" data-speaker="${c}">Громкоговоритель</button></p>
       </div>`;
   }).join('');
+
+  document.querySelectorAll('#cams video').forEach(v => {
+    v.muted = true; // autoplay разрешён только для видео без звука
+    v.addEventListener('error', () => {
+      const img = document.createElement('img');
+      img.src = v.getAttribute('poster');
+      img.alt = v.getAttribute('aria-label') || '';
+      img.dataset.cam = v.dataset.cam;
+      v.replaceWith(img);
+    });
+    const started = v.play();
+    if (started && started.catch) started.catch(() => {}); // если автозапуск запрещён, остаётся кадр-постер
+  });
 
   document.getElementById('cams').addEventListener('click', e => {
     const btn = e.target.closest('[data-speaker]');
