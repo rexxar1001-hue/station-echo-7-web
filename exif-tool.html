@@ -48,6 +48,28 @@ function formatValue(key, value) {
   return String(value);
 }
 
+// Координата съёмки в десятичных градусах: из градусов-минут-секунд (+ полушарие) или готового числа.
+function toDecimal(dms, ref, fallback) {
+  if (Array.isArray(dms) && dms.length === 3) {
+    const [d, m, s] = dms.map(Number);
+    const sign = /^[SW]/i.test(String(ref || '')) ? -1 : 1;
+    return sign * (d + m / 60 + s / 3600);
+  }
+  return typeof fallback === 'number' ? fallback : null;
+}
+
+// Квест 2 засчитывается по содержимому файла: координаты съёмки совпадают с целевыми.
+// Имя файла не важно (повторная загрузка, "(1)", переименование телефоном).
+// GPSDest-теги не учитываются — это ложный след.
+function matchesTargetCoords(data) {
+  if (!data) return false;
+  const lat = toDecimal(data.GPSLatitude, data.GPSLatitudeRef, data.latitude);
+  const lng = toDecimal(data.GPSLongitude, data.GPSLongitudeRef, data.longitude);
+  if (lat === null || lng === null) return false;
+  const tolerance = 0.0005;
+  return Math.abs(lat - CONFIG.coords.lat) < tolerance && Math.abs(lng - CONFIG.coords.lng) < tolerance;
+}
+
 async function showTags(source, label) {
   document.getElementById('filename').textContent = 'Файл: ' + label;
   const tagsEl = document.getElementById('tags');
@@ -57,30 +79,32 @@ async function showTags(source, label) {
     data = await exifr.parse(source, OPTIONS);
   } catch (e) {
     tagsEl.innerHTML = `<p class="status-bad">Не удалось прочитать файл: ${e.message}</p>`;
-    return;
+    return null;
   }
   if (!data) {
     tagsEl.innerHTML = '<p class="status-bad">Метаданные не найдены в этом файле.</p>';
-    return;
+    return null;
   }
   const rows = Object.keys(data).sort().map(k =>
     `<tr><td>${k}</td><td>${formatValue(k, data[k])}</td></tr>`
   ).join('');
   tagsEl.innerHTML = `<table><tr><th>Тег</th><th>Значение</th></tr>${rows}</table>`;
+  return data;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('upload').addEventListener('change', function (e) {
     const f = e.target.files[0];
     if (!f) return;
-    if (f.name === CONFIG.photoFile) {
-      markDone('q2a');
-      markDone('q2');
-    }
     const preview = document.getElementById('preview');
     preview.src = URL.createObjectURL(f);
     preview.style.display = '';
-    showTags(f, f.name);
+    showTags(f, f.name).then(data => {
+      if (matchesTargetCoords(data)) {
+        markDone('q2a');
+        markDone('q2');
+      }
+    });
   });
 });
 </script>
