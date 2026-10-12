@@ -79,6 +79,23 @@ const CONFIG = {
   ],
   wiring: { red: 3, blue: 1, yellow: 4, green: 2 },
 
+  // Личные дела остальных позывных (из таблицы employees; декорация) и пульс, уд/мин.
+  // Для SHADOW-01 берётся CONFIG.target; его пульс — shadowPulse.
+  shadowPulse: 180,
+  staff: {
+    'ALPHA-30':   { id: 37,  name: 'Adam Berg',        role: 'Scout',                 sector: 'Alpha',   clearance: 'Advanced', status: 'active', pulse: 94 },
+    'BETA-12':    { id: 138, name: 'Felix Maurer',     role: 'Scientist',             sector: 'Beta',    clearance: 'Basic',    status: 'active', pulse: 88 },
+    'GAMMA-24':   { id: 80,  name: 'Dora Berg',        role: 'Medic',                 sector: 'Gamma',   clearance: 'Basic',    status: 'active', pulse: 102 },
+    'DELTA-06':   { id: 43,  name: 'Wanda Lindqvist',  role: 'Technician',            sector: 'Delta',   clearance: 'Basic',    status: 'active', pulse: 79 },
+    'EPSILON-19': { id: 41,  name: 'Viktor Petrov',    role: 'Scientist',             sector: 'Epsilon', clearance: 'Advanced', status: 'active', pulse: 91 },
+    'ZETA-41':    { id: 47,  name: 'Pavel Novak',      role: 'Engineer',              sector: 'Zeta',    clearance: 'Basic',    status: 'active', pulse: 97 },
+    'THETA-08':   { id: 13,  name: 'Olga Petrov',      role: 'Laboratory Technician', sector: 'Theta',   clearance: 'Basic',    status: 'active', pulse: 84 },
+    'IOTA-33':    { id: 28,  name: 'Rita Vidmar',      role: 'Medic',                 sector: 'Iota',    clearance: 'Basic',    status: 'active', pulse: 100 },
+    'KAPPA-15':   { id: 99,  name: 'Quentin Ivanov',   role: 'Scientist',             sector: 'Kappa',   clearance: 'Advanced', status: 'active', pulse: 77 },
+    'LAMBDA-27':  { id: 11,  name: 'Daniel Petrov',    role: 'Laboratory Technician', sector: 'Lambda',  clearance: 'Basic',    status: 'active', pulse: 93 },
+    'SIGMA-02':   { id: 58,  name: 'Dora Quist',       role: 'Technician',            sector: 'Mu',      clearance: 'Basic',    status: 'active', pulse: 86 }
+  },
+
   // Квест 6/7 — терминал и камера
   cameraId: 'GAMMA-CAM-04',
   logPlain: 'Терминал GAMMA-CAM-04, несанкционированный доступ',

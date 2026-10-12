@@ -13,7 +13,7 @@
 <div class="wrap">
   <h1>БАЗА СОТРУДНИКОВ — ПОЗЫВНЫЕ</h1>
   <div class="panel">
-    <p>Оперативные позывные персонала. Расшифровка имён на этом экране не выводится.</p>
+    <p>Оперативные позывные персонала. Выберите позывной, чтобы открыть личное дело.</p>
     <div class="grid" id="list"></div>
   </div>
   <div class="panel" id="card" style="display:none"></div>
@@ -26,23 +26,128 @@
 <script>
 requireDone('q4');
 
-document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('list').innerHTML = CONFIG.callsigns
-    .map(c => `<div class="tile" data-cs="${c}">${c}</div>`).join('');
+// ---- Монитор пульса (canvas, без внешних файлов) ----
+const MON_W = 267, MON_H = 150;
+let stopMonitor = null;
 
-  document.getElementById('list').addEventListener('click', e => {
-    const tile = e.target.closest('[data-cs]');
-    if (!tile) return;
-    const card = document.getElementById('card');
-    card.style.display = '';
-    if (tile.dataset.cs !== CONFIG.callsign) {
-      card.innerHTML = `<h2>${tile.dataset.cs}</h2>
-        <p class="muted">Личное дело закрыто для этого терминала.</p>`;
-      return;
+function gauss(x, c, w) { const d = (x - c) / w; return Math.exp(-d * d); }
+
+// Форма одного удара (P, Q, R, S, T), t — секунды от пика R; k — сжатие по времени.
+function beatShape(t, k, amp, ectopic) {
+  const x = t / k;
+  if (ectopic) return amp * (-0.9 * gauss(x, 0.02, 0.05) + 0.35 * gauss(x, 0.22, 0.07));
+  return amp * (0.12 * gauss(x, -0.16, 0.025) - 0.12 * gauss(x, -0.03, 0.01) + 1.0 * gauss(x, 0, 0.012)
+              - 0.25 * gauss(x, 0.03, 0.012) + 0.3 * gauss(x, 0.2, 0.045));
+}
+
+function startMonitor(canvas, bpm, irregular, live) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = MON_W * dpr; canvas.height = MON_H * dpr;
+  canvas.style.width = MON_W + 'px'; canvas.style.height = MON_H + 'px';
+  const g = canvas.getContext('2d');
+  g.scale(dpr, dpr);
+
+  const SPEED = 90;                 // пикселей в секунду
+  const base = 60 / bpm;            // средний интервал между ударами
+  const mid = MON_H * 0.58, scaleY = MON_H * 0.36;
+  const beats = [];                 // { t, amp, k, ectopic }
+  let nextT = 0.3;
+  function fillBeats(until) {
+    while (nextT < until) {
+      let iv = base;
+      let amp = 1, ectopic = false;
+      if (irregular) {
+        iv = base * (0.55 + Math.random() * 0.9);          // неровный ритм
+        amp = 0.55 + Math.random() * 0.6;
+        if (Math.random() < 0.12) { ectopic = true; iv *= 0.7; }
+      } else {
+        iv = base * (1 + (Math.random() - 0.5) * 0.04);    // небольшая вариабельность
+        amp = 0.95 + Math.random() * 0.1;
+      }
+      beats.push({ t: nextT, amp, k: Math.max(0.45, Math.min(1.1, iv / 0.8)), ectopic });
+      nextT += iv;
     }
-    const t = CONFIG.target;
-    card.innerHTML = `
-      <h2>ЛИЧНОЕ ДЕЛО — ${CONFIG.callsign}</h2>
+  }
+  function signal(t) {
+    let v = 0;
+    for (const b of beats) {
+      if (b.t > t + 0.5) break;
+      if (b.t < t - 0.7) continue;
+      v += beatShape(t - b.t, b.k, b.amp, b.ectopic);
+    }
+    return v + (Math.random() - 0.5) * 0.02;
+  }
+
+  const col = new Float32Array(MON_W);    // сохранённый график по столбцам
+  let started = performance.now(), lastX = -1, raf = 0, stopped = false;
+  const color = irregular ? '#ff7b6b' : '#63ffb0';
+
+  function drawGrid() {
+    g.fillStyle = '#04100c'; g.fillRect(0, 0, MON_W, MON_H);
+    g.strokeStyle = 'rgba(99,255,176,0.08)'; g.lineWidth = 1;
+    g.beginPath();
+    for (let x = 0; x <= MON_W; x += 15) { g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, MON_H); }
+    for (let y = 0; y <= MON_H; y += 15) { g.moveTo(0, y + 0.5); g.lineTo(MON_W, y + 0.5); }
+    g.stroke();
+  }
+  function frame(now) {
+    if (stopped) return;
+    const t = (now - started) / 1000;
+    const xNow = Math.floor((t * SPEED) % MON_W);
+    const cycle = Math.floor(t * SPEED / MON_W);
+    fillBeats(t + 1);
+    // время столбца x в текущем цикле
+    const tOf = x => (cycle * MON_W + x) / SPEED;
+    let from = lastX < 0 ? xNow : lastX + 1;
+    if (from > xNow) from = 0;           // перенос по кругу
+    for (let x = from; x <= xNow; x++) col[x] = signal(tOf(x));
+    lastX = xNow;
+    while (beats.length > 8 && beats[0].t < t - 5) beats.shift();
+
+    drawGrid();
+    g.strokeStyle = color; g.lineWidth = 1.6; g.shadowColor = color; g.shadowBlur = 4;
+    g.beginPath();
+    let pen = false;
+    for (let x = 0; x < MON_W; x++) {
+      if (x > xNow && x < xNow + 12) { pen = false; continue; }   // зазор за лучом
+      const y = mid - col[x] * scaleY;
+      if (!pen) { g.moveTo(x, y); pen = true; } else g.lineTo(x, y);
+    }
+    g.stroke(); g.shadowBlur = 0;
+    g.fillStyle = color; g.font = '12px Consolas, monospace';
+    g.fillText('HR', 8, 16);
+    g.font = '20px Consolas, monospace';
+    g.fillText(String(bpm), 8, 38);
+    g.font = '10px Consolas, monospace'; g.fillStyle = 'rgba(143,227,194,0.6)';
+    g.fillText('BPM', 8, 50);
+    raf = requestAnimationFrame(frame);
+  }
+  // Пока рисуем только после первого заполнения: столбцы до луча считаем заранее
+  fillBeats(2);
+  raf = requestAnimationFrame(frame);
+  return () => { stopped = true; cancelAnimationFrame(raf); };
+}
+
+function drawNoSignal(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = MON_W * dpr; canvas.height = MON_H * dpr;
+  canvas.style.width = MON_W + 'px'; canvas.style.height = MON_H + 'px';
+  const g = canvas.getContext('2d');
+  g.scale(dpr, dpr);
+  g.fillStyle = '#04100c'; g.fillRect(0, 0, MON_W, MON_H);
+  g.strokeStyle = 'rgba(99,255,176,0.08)';
+  for (let x = 0; x <= MON_W; x += 15) { g.beginPath(); g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, MON_H); g.stroke(); }
+  for (let y = 0; y <= MON_H; y += 15) { g.beginPath(); g.moveTo(0, y + 0.5); g.lineTo(MON_W, y + 0.5); g.stroke(); }
+  g.strokeStyle = '#ff7b6b'; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(0, MON_H * 0.58); g.lineTo(MON_W, MON_H * 0.58); g.stroke();
+  g.fillStyle = '#ff7b6b'; g.font = '16px Consolas, monospace'; g.textAlign = 'center';
+  g.fillText('NO SIGNAL', MON_W / 2, MON_H * 0.4);
+}
+
+function profileHtml(title, t, monitorExtra) {
+  return `
+    <h2>${title}</h2>
+    <div class="profile">
       <table>
         <tr><th>id</th><td>${String(t.id).padStart(3, '0')}</td></tr>
         <tr><th>name</th><td>${t.name}</td></tr>
@@ -51,8 +156,42 @@ document.addEventListener('DOMContentLoaded', function () {
         <tr><th>clearance</th><td>${t.clearance}</td></tr>
         <tr><th>status</th><td>${t.status}</td></tr>
       </table>
-      <p>Монитор пульса: <span class="status-bad">NO SIGNAL</span></p>
-      <a class="btn" href="heartbeat.html">Восстановить соединение</a>`;
+      <div class="monitor">
+        <div class="muted">МОНИТОР ПУЛСА</div>
+        <canvas id="pulse" width="${MON_W}" height="${MON_H}"></canvas>
+        ${monitorExtra}
+      </div>
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('list').innerHTML = CONFIG.callsigns
+    .map(c => `<div class="tile" data-cs="${c}">${c}</div>`).join('');
+
+  document.getElementById('list').addEventListener('click', e => {
+    const tile = e.target.closest('[data-cs]');
+    if (!tile) return;
+    const cs = tile.dataset.cs;
+    const card = document.getElementById('card');
+    card.style.display = '';
+    if (stopMonitor) { stopMonitor(); stopMonitor = null; }
+
+    if (cs === CONFIG.callsign) {
+      const live = isDone('q5');
+      card.innerHTML = profileHtml('ЛИЧНОЕ ДЕЛО — ' + cs, CONFIG.target,
+        live ? '' : '<p><a class="btn" href="heartbeat.html">Восстановить соединение</a></p>');
+      const canvas = document.getElementById('pulse');
+      if (live) stopMonitor = startMonitor(canvas, CONFIG.shadowPulse, true);
+      else drawNoSignal(canvas);
+      return;
+    }
+    const t = CONFIG.staff[cs];
+    if (!t) {
+      card.innerHTML = `<h2>${cs}</h2><p class="muted">Личное дело закрыто для этого терминала.</p>`;
+      return;
+    }
+    card.innerHTML = profileHtml('ЛИЧНОЕ ДЕЛО — ' + cs, t, '');
+    stopMonitor = startMonitor(document.getElementById('pulse'), t.pulse, false);
   });
 });
 </script>
