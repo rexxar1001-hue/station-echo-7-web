@@ -21,17 +21,17 @@ const CONFIG = {
 
   // Квест 1 — искомый сотрудник
   target: {
-    id: 87,
-    name: 'Viktor Orel',
-    sector: 'Lambda',
-    clearance: 'Omega',
-    role: 'Scout',
-    status: 'missing',
-    hiringFrom: '2016-04-02'
+    id: 3,
+    name: 'Daniel Stern',
+    sector: 'Epsilon',
+    clearance: 'Basic',
+    role: 'Quartermaster',
+    status: 'active',
+    hiringFrom: '1998-10-02'
   },
 
   // Квест 2 — файл фото и координаты
-  photoFile: 'field_photo_087.jpg',
+  photoFile: 'field_photo_003.jpg',
   coords: { lat: 45.8923, lng: 13.0642 },
 
   // Квест 3 — точки карты
