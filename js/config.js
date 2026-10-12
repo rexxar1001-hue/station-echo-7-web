@@ -101,7 +101,7 @@ const CONFIG = {
   logPlain: 'Терминал GAMMA-CAM-04, несанкционированный доступ',
 
   // Квест 8 — скрытая страница
-  diaryPath: 'diary-vorel-087.html',
+  diaryPath: 'diary-stern-003.html',
   // Сколько раз применяется base64 к адресу дневника в таблице notes
   diaryEncodeLayers: 2
 };
