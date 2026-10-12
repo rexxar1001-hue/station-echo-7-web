@@ -23,6 +23,7 @@
 <script src="js/state.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/menu.js"></script>
+<script src="js/wiring.js"></script>
 <script>
 requireDone('q4');
 
@@ -179,10 +180,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cs === CONFIG.callsign) {
       const live = isDone('q5');
       card.innerHTML = profileHtml('ЛИЧНОЕ ДЕЛО — ' + cs, CONFIG.target,
-        live ? '' : '<p><a class="btn" href="heartbeat.html">Восстановить соединение</a></p>');
+        live ? '' : '<p><button type="button" id="restore">Восстановить соединение</button></p>');
       const canvas = document.getElementById('pulse');
       if (live) stopMonitor = startMonitor(canvas, CONFIG.shadowPulse, true);
-      else drawNoSignal(canvas);
+      else {
+        drawNoSignal(canvas);
+        document.getElementById('restore').addEventListener('click', () => {
+          openWiringModal(() => {
+            // после успешного подключения — обновить карточку: монитор запустится
+            tile.click();
+          });
+        });
+      }
       return;
     }
     const t = CONFIG.staff[cs];
