@@ -39,7 +39,7 @@ python3 -m http.server 8000
 
 | Квест | Страница | Решение |
 |---|---|---|
-| 0 | `index.html` | Логин `Viktor Orel`, пароль `bKlb85kA`. Подсказка — HTML-комментарий в исходном коде страницы (id 087) |
+| 0 | `index.html` | Логин `Viktor Orel`, пароль `bKlb85kA`. Подсказка — HTML-комментарий в исходном коде страницы (`target: ****** Orel`, пароль в `new_hash_ref`); имя «Viktor» берётся из записи в блокноте Аналитика |
 | 1 | `staff-db.html` | `SELECT * FROM employees WHERE sector = 'Lambda' AND clearance = 'Omega';` → id 087 |
 | 2 | `photos.html` → `exif-tool.html` | Открыть `field_photo_087.jpg`, скачать снимок и загрузить его в «Анализ метаданных» → GPS **45.8923, 13.0642** (теги GPSDest — ложный след; у остальных фото GPS тоже есть, но чужие) |
 | 3 | `map.html` | Ввести координаты → мачта на западном обрыве, верная точка — **AP-07** |
