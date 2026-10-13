@@ -70,15 +70,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const btn = e.target.closest('[data-speaker]');
     if (!btn) return;
     const out = document.getElementById('speaker-out');
-    if (btn.dataset.speaker !== CONFIG.cameraId) {
-      out.innerHTML = '<p class="muted">Нет ответа с этой локации.</p>';
+    // Файл реплики каждой камеры: audio/speaker_<имя_камеры_строчными, дефисы → _>.wav
+    const cam = btn.dataset.speaker;
+    const audioFile = 'audio/speaker_' + cam.toLowerCase().replace(/-/g, '_') + '.wav';
+    if (cam !== CONFIG.cameraId) {
+      out.innerHTML = `
+        <h2>${cam} — ГРОМКОГОВОРИТЕЛЬ ЛОКАЦИИ</h2>
+        <p class="muted">Нет ответа с этой локации.</p>
+        <audio id="speaker-audio" controls src="${audioFile}"></audio>`;
+      const other = document.getElementById('speaker-audio');
+      if (other) other.play().catch(() => {});
       return;
     }
     markDone('q7');
     out.innerHTML = `
       <h2>${CONFIG.cameraId} — ГРОМКОГОВОРИТЕЛЬ ЛОКАЦИИ</h2>
       <p>«${SPEAKER_LINE}»</p>
-      <audio id="speaker-audio" controls src="audio/speaker_gamma_cam_04.wav"></audio>
+      <audio id="speaker-audio" controls src="${audioFile}"></audio>
       <p class="status-bad">Связь прервана. Сигнал потерян.</p>
       <a class="btn" href="dashboard.html">Личный кабинет</a>`;
     const audio = document.getElementById('speaker-audio');
