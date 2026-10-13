@@ -130,9 +130,15 @@ ffmpeg -i source.mp4 -vf "scale=640:-2" -an -c:v libx264 -profile:v main -pix_fm
 
 ---
 
-## 5. Реплика из громкоговорителя (квест 7) — `audio/speaker_gamma_cam_04.wav`
+## 5. Громкоговорители камер (квест 7) — папка `audio/`
 
-Короткая (5–10 с) реплика раненого Daniel Stern. Текст, который выводится на экране
+Каждая камера воспроизводит свой файл `audio/speaker_<имя_камеры>.wav` (строчными, дефисы → `_`):
+`speaker_alpha_cam_01.wav`, `speaker_beta_cam_02.wav`, `speaker_beta_cam_03.wav`,
+**`speaker_gamma_cam_04.wav`** (важный), `speaker_gamma_cam_05.wav`, `speaker_delta_cam_06.wav`,
+`speaker_epsilon_cam_07.wav`, `speaker_zeta_cam_08.wav`, `speaker_eta_cam_09.wav`, `speaker_theta_cam_10.wav`.
+Сейчас все десять — одна и та же заглушка (белый шум, 3 с). Прогресс засчитывается только на GAMMA-CAM-04.
+
+Для `speaker_gamma_cam_04.wav` — короткая (5–10 с) реплика раненого Daniel Stern. Текст, который выводится на экране
 рядом с аудио, задан в `cameras.html` (константа `SPEAKER_LINE`) — при изменении
 записи поправьте и его.
 
