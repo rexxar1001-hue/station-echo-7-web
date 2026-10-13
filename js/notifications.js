@@ -184,6 +184,8 @@ function renderEnvelopeState() {
 
 // Показ нового уведомления при заходе на дашборд
 function processPendingNotification() {
+  stampNotifications();                    // даты получения фиксируются и при скрытых уведомлениях
+  if (!CONFIG.showNotifications) return;   // всплывающее окно отключено в config.js
   const n = pendingNotification();
   if (!n) return;
   localStorage.setItem('notif_' + n.id, 'shown');

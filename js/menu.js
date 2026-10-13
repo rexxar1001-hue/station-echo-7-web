@@ -31,10 +31,11 @@ function renderHeader() {
     <a class="brand" href="dashboard.html">ECHO-7</a>
     <nav>${links}</nav>
     <span class="spacer"></span>
-    <button class="envelope" type="button" title="Входящие">&#9993;</button>
+    ${CONFIG.showNotifications ? '<button class="envelope" type="button" title="Входящие">&#9993;</button>' : ''}
     <button class="logout" type="button">Выход</button>`;
   document.body.prepend(header);
-  header.querySelector('.envelope').addEventListener('click', showInbox);
+  const envelope = header.querySelector('.envelope');
+  if (envelope) envelope.addEventListener('click', showInbox);
   header.querySelector('.logout').addEventListener('click', logout);
   renderEnvelopeState();
 }
