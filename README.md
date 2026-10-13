@@ -25,7 +25,7 @@ python3 -m http.server 8000
   `dashboard.html` — главная страница со ссылками на все разделы;
 * `false` — разделы открываются по мере прохождения квестов, как в исходном сценарии.
 
-Страница дневника `diary-vorel-087.html` остаётся скрытой в обоих режимах — ссылок на неё нет.
+Страница дневника `diary-stern-003.html` остаётся скрытой в обоих режимах — ссылок на неё нет.
 
 Для квестов 1, 6 и 8 нужен интернет — библиотеки sql.js, exifr, Leaflet и Pyodide
 подключаются с CDN.
@@ -40,14 +40,14 @@ python3 -m http.server 8000
 | Квест | Страница | Решение |
 |---|---|---|
 | 0 | `index.html` | Логин `Viktor Orel`, пароль `bKlb85kA`. Подсказка — HTML-комментарий в исходном коде страницы (`target: ****** Orel`, пароль в `new_hash_ref`); имя «Viktor» берётся из записи в блокноте Аналитика |
-| 1 | `staff-db.html` | `SELECT * FROM employees WHERE sector = 'Lambda' AND clearance = 'Omega';` → id 087 |
-| 2 | `photos.html` → `exif-tool.html` | Открыть `field_photo_087.jpg`, скачать снимок и загрузить его в «Анализ метаданных» → GPS **45.8923, 13.0642** (теги GPSDest — ложный след; у остальных фото GPS тоже есть, но чужие) |
+| 1 | `staff-db.html` | Пропавший — **Daniel Stern** (id 003, роль Quartermaster, сектор Epsilon, допуск Basic, статус missing). Роль и сектор Аналитик восстанавливает по противоречивым показаниям свидетелей в блокноте. Запрос: `SELECT * FROM employees WHERE role = 'Quartermaster' AND sector = 'Epsilon';` → одна строка, id 003. Квест засчитывается при любом запросе, вернувшем ровно одну строку с id 3 |
+| 2 | `photos.html` → `exif-tool.html` | Открыть `field_photo_003.jpg`, скачать снимок и загрузить его в «Анализ метаданных» → GPS **45.8923, 13.0642** (теги GPSDest — ложный след; у остальных фото GPS тоже есть, но чужие) |
 | 3 | `map.html` | Ввести координаты → мачта на западном обрыве, верная точка — **AP-07** |
 | 4 | `radio-archive.html` | Файл **rec_142.7.wav** (частоту называет Аналитик), режимы Reverse + Spectrogram → метка **SHADOW-01** |
-| 5 | `nicknames.html` → `heartbeat.html` | SHADOW-01 = id 087. Схема: Красный→3, Синий→1, Жёлтый→4, Зелёный→2 → статус CRITICAL |
+| 5 | `nicknames.html` → `heartbeat.html` | SHADOW-01 = id 003 (Daniel Stern). Схема: Красный→3, Синий→1, Жёлтый→4, Зелёный→2 → статус CRITICAL |
 | 6 | `logs.html` → `terminal.html` | Аналитик по журналу ТО определяет запись **2024-09-03 22:17 (LOG-4471)** → декодируется в «Терминал GAMMA-CAM-04, несанкционированный доступ» |
 | 7 | `cameras.html` | Камера **GAMMA-CAM-04** → «Громкоговоритель» → упоминание дневника |
-| 8 | `staff-db.html` → `terminal.html` → `diary-vorel-087.html` | `SELECT * FROM notes WHERE id = 087;` → строка в **двойном Base64** → путь `diary-vorel-087.html`, там спрятан финальный код |
+| 8 | `staff-db.html` → `terminal.html` → `diary-stern-003.html` | `SELECT * FROM notes WHERE id = 3;` → строка в **двойном Base64** → путь `diary-stern-003.html`, там спрятан финальный код |
 
 На сайте видны только даты и номера записей логов — смысл записи известен только
 Аналитику по бумажному журналу технического обслуживания. Соответствие дат нужно
@@ -56,7 +56,7 @@ python3 -m http.server 8000
 ## Что нужно заменить перед игрой
 
 1. **Медиа** — все файлы в `img/` и `audio/` сейчас заглушки. Список имён и требований: [ASSETS.md](ASSETS.md).
-2. **Дневник** — `diary-vorel-087.html`, сейчас текст-заглушка с **временным кодом 4729**.
+2. **Дневник** — `diary-stern-003.html`, сейчас текст-заглушка с **временным кодом 4729**.
 3. При желании — параметры игры в `js/config.js`.
 
 ## Структура
@@ -74,7 +74,7 @@ heartbeat.html          квест 5.2 — мини-игра «соедини п
 logs.html               квест 6.1 — закодированные логи
 terminal.html           квесты 6.2 и 8.2 — Python-терминал (Pyodide)
 cameras.html            квест 7 — видеонаблюдение
-diary-vorel-087.html    квест 8.3 — скрытая страница дневника (нет ссылок в меню)
+diary-stern-003.html     квест 8.3 — скрытая страница дневника (нет ссылок в меню)
 reset.html              служебная страница: сброс прогресса
 css/style.css           тема «тёмный терминал»
 js/config.js            все игровые параметры в одном месте
@@ -82,10 +82,11 @@ js/state.js             прогресс в localStorage
 js/notifications.js     уведомления и «входящие»
 js/menu.js              шапка и меню по прогрессу
 js/sqlterm.js           общий SQL-терминал (sql.js)
-data/generate_db.py     генератор station.sqlite
-data/station.sqlite     готовая база (employees 150, notes 150)
+data/generate_db.py     первичный генератор (устарел, больше не запускается; цель — Orel/087)
+data/station.sqlite     актуальная база (employees 150, notes 150) — источник истины,
+                        правилась вручную после генерации; резервная копия — локально, в .gitignore
 tools/make_placeholders.py  генерация заглушек медиа
-tools/embed_exif.py     вшивание GPS-тегов в фото 087
+tools/embed_exif.py     вшивание GPS-тегов в фото квеста (скрипты tools/ не обновлены под 003)
 ```
 
 ## Прогресс и отладка

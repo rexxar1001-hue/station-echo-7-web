@@ -1,3 +1,6 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# Резервная копия базы (локальная, в репозиторий не попадает)
+data/station_old.sqlite

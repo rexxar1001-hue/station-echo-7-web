@@ -26,7 +26,7 @@ const CONFIG = {
     sector: 'Epsilon',
     clearance: 'Basic',
     role: 'Quartermaster',
-    status: 'active',
+    status: 'missing',
     hiringFrom: '1998-10-02'
   },
 
