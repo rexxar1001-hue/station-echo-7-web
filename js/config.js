@@ -60,7 +60,8 @@ const CONFIG = {
   clusterPoints: ['AP-03', 'AP-07', 'AP-11'],
 
   // Квест 4 — аудиоархив
-  audioDir: 'audio/AP-07/',
+  // Для каждой точки AP-NN своя папка audio/AP-NN/ с теми же 14 файлами; верная запись — только в correctPoint.
+  audioRoot: 'audio/',
   audioFiles: [
     'rec_38.6.wav', 'rec_47.2.wav', 'rec_59.4.wav', 'rec_71.9.wav',
     'rec_88.3.wav', 'rec_96.5.wav', 'rec_104.8.wav', 'rec_117.2.wav',

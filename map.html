@@ -98,13 +98,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function openArchive(code) {
     const msg = document.getElementById('msg');
-    if (code === CONFIG.correctPoint) {
-      markDone('q3');
-      msg.innerHTML = `<span class="status-ok">Точка ${code}: архив доступен.</span>
-        <a class="btn" href="radio-archive.html">Открыть архив точки ${code}</a>`;
-    } else {
-      msg.innerHTML = `<span class="muted">Точка ${code}: архив недоступен.</span>`;
-    }
+    if (code === CONFIG.correctPoint) markDone('q3');
+    msg.innerHTML = `<span class="status-ok">Точка ${code}: архив доступен.</span>
+      <a class="btn" href="radio-archive.html?point=${code}">Открыть архив точки ${code}</a>`;
   }
 
   function goToCoords() {

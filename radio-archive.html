@@ -16,10 +16,17 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>АРХИВЫ — РАДИОЗАПИСИ, ТОЧКА AP-07</h1>
+  <h1 id="title">АРХИВЫ — РАДИОЗАПИСИ</h1>
   <div class="panel">
-    <p>Записи повреждены. Подписи о назначении частот утрачены.</p>
-    <div class="file-list" id="files"></div>
+    <p>Точки приёма:</p>
+    <div class="file-list" id="points"></div>
+  </div>
+  <div class="panel">
+    <p id="files-hint" class="muted">Выберите точку приёма.</p>
+    <div id="files-box" style="display:none">
+      <p>Записи повреждены. Подписи о назначении частот утрачены.</p>
+      <div class="file-list" id="files"></div>
+    </div>
   </div>
   <div class="panel">
     <p id="current" class="muted">Файл не выбран.</p>
@@ -49,6 +56,7 @@ requireDone('q3');
 let ctx = null;
 let buffer = null;
 let currentFile = null;
+let currentPoint = null;
 let usedReverse = false;
 let usedSpectrogram = false;
 
@@ -61,7 +69,7 @@ async function loadFile(name) {
   document.getElementById('status').textContent = 'Загрузка…';
   ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
   try {
-    const data = await (await fetch(CONFIG.audioDir + name)).arrayBuffer();
+    const data = await (await fetch(CONFIG.audioRoot + currentPoint + '/' + name)).arrayBuffer();
     buffer = await ctx.decodeAudioData(data);
     document.getElementById('status').textContent = 'Запись загружена.';
   } catch (e) {
@@ -91,7 +99,7 @@ function play(rate, reversed) {
 }
 
 function checkProgress() {
-  if (currentFile === CONFIG.correctAudio && usedReverse && usedSpectrogram) {
+  if (currentPoint === CONFIG.correctPoint && currentFile === CONFIG.correctAudio && usedReverse && usedSpectrogram) {
     markDone('q4');
     setData('callsign', CONFIG.callsign);
     document.getElementById('done').style.display = '';
@@ -99,6 +107,29 @@ function checkProgress() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  function selectPoint(code) {
+    currentPoint = code;
+    currentFile = null; buffer = null; usedReverse = false; usedSpectrogram = false;
+    document.querySelectorAll('#points button').forEach(b => b.classList.toggle('active', b.dataset.point === code));
+    document.querySelectorAll('#files button').forEach(b => b.classList.remove('active'));
+    ['normal', 'reverse', 'slow', 'fast', 'spec'].forEach(id => { document.getElementById(id).disabled = true; });
+    document.getElementById('spectrogram').style.display = 'none';
+    document.getElementById('current').textContent = 'Файл не выбран.';
+    document.getElementById('status').textContent = '';
+    document.getElementById('title').textContent = 'АРХИВЫ — РАДИОЗАПИСИ, ТОЧКА ' + code;
+    document.getElementById('files-hint').style.display = 'none';
+    document.getElementById('files-box').style.display = '';
+  }
+
+  document.getElementById('points').innerHTML = CONFIG.mapPoints
+    .map(p => `<button type="button" data-point="${p.code}">${p.code}</button>`).join('');
+  document.getElementById('points').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-point]');
+    if (btn) selectPoint(btn.dataset.point);
+  });
+  const fromUrl = new URLSearchParams(location.search).get('point');
+  if (fromUrl && CONFIG.mapPoints.some(p => p.code === fromUrl)) selectPoint(fromUrl);
+
   document.getElementById('files').innerHTML = CONFIG.audioFiles
     .map(f => `<button type="button" data-file="${f}">${f}</button>`).join('');
 
@@ -123,7 +154,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const img = document.getElementById('spectrogram');
     const name = currentFile.replace(/\.wav$/, '');
     img.onerror = () => { img.onerror = null; img.src = 'img/spectrogram_noise.png'; };
-    img.src = `img/spectrogram_${name}.png`;
+    // Метка SHADOW-01 есть только на записи верной точки; у «одноимённых» файлов других точек — обычный шум.
+    img.src = (currentPoint !== CONFIG.correctPoint && currentFile === CONFIG.correctAudio)
+      ? 'img/spectrogram_noise.png' : `img/spectrogram_${name}.png`;
     img.style.display = 'block';
     checkProgress();
   });
