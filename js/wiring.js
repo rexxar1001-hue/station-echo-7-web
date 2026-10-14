@@ -47,7 +47,7 @@ function openWiringModal(onSolved) {
     if (WIRING_COLORS.every(c => linked[c.key] === CONFIG.wiring[c.key])) {
       solved = true;
       markDone('q5');
-      q('msg').innerHTML = '<span class="status-ok">Схема верна. Канал монитора восстановлен.</span>';
+      q('msg').innerHTML = '<span class="status-bad">Критическая ошибка. Проверьте логи</span>';
       q('reset').style.display = 'none';
       q('close').style.display = '';
     } else {

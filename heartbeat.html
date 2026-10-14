@@ -26,7 +26,7 @@
     <p><button id="reset" type="button">Сбросить попытку</button></p>
   </div>
   <div class="panel" id="done" style="display:none">
-    <p>Статус монитора: <span class="status-bad">CRITICAL</span> — сигнал восстановлен, пульс есть.</p>
+    <p>Статус монитора: <span class="status-bad">CRITICAL</span> — <span class="status-bad">Критическая ошибка. Проверьте логи</span></p>
     <a class="btn" href="dashboard.html">Личный кабинет</a>
   </div>
 </div>
@@ -63,7 +63,7 @@ function check() {
   const ok = COLORS.every(c => linked[c.key] === CONFIG.wiring[c.key]);
   if (ok) {
     markDone('q5');
-    document.getElementById('msg').innerHTML = '<span class="status-ok">Схема верна. Канал монитора восстановлен.</span>';
+    document.getElementById('msg').innerHTML = '<span class="status-bad">Критическая ошибка. Проверьте логи</span>';
     document.getElementById('done').style.display = '';
   } else {
     linked = {};

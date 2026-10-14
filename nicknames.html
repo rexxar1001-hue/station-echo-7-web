@@ -145,7 +145,7 @@ function drawNoSignal(canvas) {
   g.fillText('NO SIGNAL', MON_W / 2, MON_H * 0.4);
 }
 
-function profileHtml(title, t, monitorExtra) {
+function profileHtml(title, t, monitorExtra, monitorAlert) {
   return `
     <h2>${title}</h2>
     <div class="profile">
@@ -159,6 +159,7 @@ function profileHtml(title, t, monitorExtra) {
       </table>
       <div class="monitor">
         <div class="muted">МОНИТОР ПУЛЬСА</div>
+        ${monitorAlert ? `<p class="status-bad" style="margin:4px 0">${monitorAlert}</p>` : ''}
         <canvas id="pulse" width="${MON_W}" height="${MON_H}"></canvas>
         ${monitorExtra}
       </div>
@@ -180,7 +181,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (cs === CONFIG.callsign) {
       const live = isDone('q5');
       card.innerHTML = profileHtml('ЛИЧНОЕ ДЕЛО — ' + cs, CONFIG.target,
-        live ? '' : '<p><button type="button" id="restore">Восстановить соединение</button></p>');
+        live ? '' : '<p><button type="button" id="restore">Восстановить соединение</button></p>',
+        live ? 'Проверьте логи' : '');
       const canvas = document.getElementById('pulse');
       if (live) stopMonitor = startMonitor(canvas, CONFIG.shadowPulse, true);
       else {
