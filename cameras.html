@@ -43,6 +43,9 @@ const SPEAKER_LINE = 'Если кто-то слышит меня... найдит
 
 // Через сколько после разворачивания камеры появляется кнопка «Громкоговоритель».
 const SPEAKER_DELAY_MS = 30000;
+// Надпись над изображением: до появления кнопки и в момент её появления.
+const NOTICE_WAIT = 'В случае фиксации движения, появится возможность Громкоговорителя';
+const NOTICE_MOTION = 'Обнаружено движение. Включена возможность голосовой связи.';
 
 let camBackdrop = null;
 let speakerTimer = null;
@@ -97,6 +100,7 @@ function openCamera(cam) {
   backdrop.innerHTML = `
     <div class="modal cam-modal" role="dialog" aria-modal="true" aria-label="${cam}">
       <h3>${cam}</h3>
+      <p data-role="notice" class="muted">${NOTICE_WAIT}</p>
       <div class="cam-view">${view}</div>
       <p data-role="speaker-btn" style="display:none"><button type="button">Громкоговоритель</button></p>
       <div data-role="speaker-out"></div>
@@ -121,7 +125,12 @@ function openCamera(cam) {
   const btnBox = backdrop.querySelector('[data-role="speaker-btn"]');
   const out = backdrop.querySelector('[data-role="speaker-out"]');
   btnBox.querySelector('button').addEventListener('click', () => runSpeaker(cam, out));
-  speakerTimer = setTimeout(() => { btnBox.style.display = ''; }, SPEAKER_DELAY_MS);
+  const notice = backdrop.querySelector('[data-role="notice"]');
+  speakerTimer = setTimeout(() => {
+    btnBox.style.display = '';
+    notice.textContent = NOTICE_MOTION;
+    notice.className = 'status-bad';
+  }, SPEAKER_DELAY_MS);
 
   backdrop.addEventListener('click', e => {
     if (e.target === backdrop || e.target.closest('[data-role="close"]')) closeCamera();
