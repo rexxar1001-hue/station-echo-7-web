@@ -8,17 +8,23 @@
   <link rel="icon" type="image/png" href="img/logo.png">
   <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  .cam-thumb { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+  .cam-thumb:hover img, .cam-thumb:focus-visible img { outline: 1px solid var(--accent); }
+  .cam-modal { max-width: 960px; }
+  .cam-view img, .cam-view video { width: 100%; display: block; background: #000; }
+</style>
 </head>
 <body>
 <div class="wrap">
   <h1>СИСТЕМА ВИДЕОНАБЛЮДЕНИЯ</h1>
   <div class="panel">
     <p>Камеры станции и прилегающих секторов. Прямой эфир с задержкой.</p>
+    <p class="muted">Нажмите на изображение камеры, чтобы развернуть её.</p>
   </div>
   <div class="panel">
     <div class="grid" id="cams"></div>
   </div>
-  <div class="panel" id="speaker-out"></div>
 </div>
 
 <script src="js/config.js"></script>
@@ -35,53 +41,33 @@ const CAMERAS = [
 
 const SPEAKER_LINE = 'Если кто-то слышит меня... найдите мой дневник. Существует еще одна таблица notes, все записи хранятся под ID персонала';
 
-document.addEventListener('DOMContentLoaded', function () {
-  // Все камеры — статичные кадры; камера из CONFIG.cameraId показывает зацикленное MP4 без
-  // элементов управления (выглядит как анимированная картинка). Пока файла camera_NN.mp4 нет
-  // (или браузер не может его проиграть), показывается обычный кадр camera_NN_empty.jpg.
-  document.getElementById('cams').innerHTML = CAMERAS.map(c => {
-    const n = c.slice(-2);
-    const still = `img/camera_${n}_empty.jpg`;
-    const view = c === CONFIG.cameraId
-      ? `<video src="img/camera_${n}.mp4" poster="${still}" data-cam="${c}" aria-label="${c}"
-               autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>`
-      : `<img src="${still}" alt="${c}" data-cam="${c}">`;
-    return `<div class="tile" style="cursor:default">
-        ${view}
-        ${c}
-        <p><button type="button" data-speaker="${c}">Громкоговоритель</button></p>
-      </div>`;
-  }).join('');
+// Через сколько после разворачивания камеры появляется кнопка «Громкоговоритель».
+const SPEAKER_DELAY_MS = 30000;
 
-  document.querySelectorAll('#cams video').forEach(v => {
-    v.muted = true; // autoplay разрешён только для видео без звука
-    v.addEventListener('error', () => {
-      const img = document.createElement('img');
-      img.src = v.getAttribute('poster');
-      img.alt = v.getAttribute('aria-label') || '';
-      img.dataset.cam = v.dataset.cam;
-      v.replaceWith(img);
-    });
-    const started = v.play();
-    if (started && started.catch) started.catch(() => {}); // если автозапуск запрещён, остаётся кадр-постер
-  });
+let camBackdrop = null;
+let speakerTimer = null;
+let camKeyHandler = null;
 
-  document.getElementById('cams').addEventListener('click', e => {
-    const btn = e.target.closest('[data-speaker]');
-    if (!btn) return;
-    const out = document.getElementById('speaker-out');
-    // Файл реплики каждой камеры: audio/speaker_<имя_камеры_строчными, дефисы → _>.wav
-    const cam = btn.dataset.speaker;
-    const audioFile = 'audio/speaker_' + cam.toLowerCase().replace(/-/g, '_') + '.wav';
-    if (cam !== CONFIG.cameraId) {
-      out.innerHTML = `
-        <h2>${cam} — ГРОМКОГОВОРИТЕЛЬ ЛОКАЦИИ</h2>
-        <p class="muted">Нет ответа с этой локации.</p>
-        <audio id="speaker-audio" controls src="${audioFile}"></audio>`;
-      const other = document.getElementById('speaker-audio');
-      if (other) other.play().catch(() => {});
-      return;
-    }
+function closeCamera() {
+  clearTimeout(speakerTimer);
+  speakerTimer = null;
+  if (camKeyHandler) { document.removeEventListener('keydown', camKeyHandler); camKeyHandler = null; }
+  if (camBackdrop) {
+    camBackdrop.querySelectorAll('video, audio').forEach(m => { try { m.pause(); } catch (e) { /* без звука */ } });
+    camBackdrop.remove();
+    camBackdrop = null;
+  }
+}
+
+function runSpeaker(cam, out) {
+  // Файл реплики каждой камеры: audio/speaker_<имя_камеры_строчными, дефисы → _>.wav
+  const audioFile = 'audio/speaker_' + cam.toLowerCase().replace(/-/g, '_') + '.wav';
+  if (cam !== CONFIG.cameraId) {
+    out.innerHTML = `
+      <h2>${cam} — ГРОМКОГОВОРИТЕЛЬ ЛОКАЦИИ</h2>
+      <p class="muted">Нет ответа с этой локации.</p>
+      <audio id="speaker-audio" controls src="${audioFile}"></audio>`;
+  } else {
     markDone('q7');
     out.innerHTML = `
       <h2>${CONFIG.cameraId} — ГРОМКОГОВОРИТЕЛЬ ЛОКАЦИИ</h2>
@@ -89,8 +75,76 @@ document.addEventListener('DOMContentLoaded', function () {
       <audio id="speaker-audio" controls src="${audioFile}"></audio>
       <p class="status-bad">Связь прервана. Сигнал потерян.</p>
       <a class="btn" href="dashboard.html">Личный кабинет</a>`;
-    const audio = document.getElementById('speaker-audio');
-    if (audio) audio.play().catch(() => {});
+  }
+  const audio = out.querySelector('#speaker-audio');
+  if (audio) audio.play().catch(() => {});
+}
+
+// Камера разворачивается в окне. Видео (только у камеры из CONFIG.cameraId) начинает играть
+// с этого момента, остальные камеры показывают неподвижный кадр. Кнопка «Громкоговоритель»
+// появляется через SPEAKER_DELAY_MS после разворачивания.
+function openCamera(cam) {
+  closeCamera();
+  const n = cam.slice(-2);
+  const still = `img/camera_${n}_empty.jpg`;
+  const view = cam === CONFIG.cameraId
+    ? `<video src="img/camera_${n}.mp4" poster="${still}" aria-label="${cam}"
+             autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>`
+    : `<img src="${still}" alt="${cam}">`;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `
+    <div class="modal cam-modal" role="dialog" aria-modal="true" aria-label="${cam}">
+      <h3>${cam}</h3>
+      <div class="cam-view">${view}</div>
+      <p data-role="speaker-btn" style="display:none"><button type="button">Громкоговоритель</button></p>
+      <div data-role="speaker-out"></div>
+      <div class="modal-actions"><button type="button" data-role="close">Закрыть</button></div>
+    </div>`;
+  document.body.appendChild(backdrop);
+  camBackdrop = backdrop;
+
+  const video = backdrop.querySelector('video');
+  if (video) {
+    video.muted = true; // autoplay разрешён только для видео без звука
+    video.addEventListener('error', () => {
+      const img = document.createElement('img');
+      img.src = still;
+      img.alt = cam;
+      video.replaceWith(img);
+    });
+    const started = video.play();
+    if (started && started.catch) started.catch(() => {}); // если автозапуск запрещён, остаётся кадр-постер
+  }
+
+  const btnBox = backdrop.querySelector('[data-role="speaker-btn"]');
+  const out = backdrop.querySelector('[data-role="speaker-out"]');
+  btnBox.querySelector('button').addEventListener('click', () => runSpeaker(cam, out));
+  speakerTimer = setTimeout(() => { btnBox.style.display = ''; }, SPEAKER_DELAY_MS);
+
+  backdrop.addEventListener('click', e => {
+    if (e.target === backdrop || e.target.closest('[data-role="close"]')) closeCamera();
+  });
+  camKeyHandler = e => { if (e.key === 'Escape') closeCamera(); };
+  document.addEventListener('keydown', camKeyHandler);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // До нажатия все камеры показывают неподвижный кадр camera_NN_empty.jpg (запись «заморожена»).
+  document.getElementById('cams').innerHTML = CAMERAS.map(c => {
+    const n = c.slice(-2);
+    return `<div class="tile" style="cursor:default">
+        <button type="button" class="cam-thumb" data-open="${c}" aria-label="Развернуть ${c}">
+          <img src="img/camera_${n}_empty.jpg" alt="${c}">
+        </button>
+        ${c}
+      </div>`;
+  }).join('');
+
+  document.getElementById('cams').addEventListener('click', e => {
+    const btn = e.target.closest('[data-open]');
+    if (btn) openCamera(btn.dataset.open);
   });
 });
 </script>
