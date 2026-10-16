@@ -49,9 +49,10 @@ function afterDecode(decoded) {
     markDone('q6');
     next.innerHTML = '<p><a class="btn" href="cameras.html">Перейти к видеонаблюдению</a></p>';
   } else if (pathMatch && pathMatch[0].toLowerCase() === CONFIG.diaryPath.toLowerCase()) {
+    // Квест засчитывается по самому факту расшифровки адреса; ссылки на дневник нет —
+    // игрок должен сам догадаться перейти по расшифрованному адресу.
     markDone('q8');
-    const path = pathMatch[0];
-    next.innerHTML = `<p><a class="btn" href="${path}">${path}</a></p>`;
+    next.innerHTML = '';
   } else {
     next.innerHTML = '';
   }
