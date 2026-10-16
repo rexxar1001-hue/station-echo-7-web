@@ -12,6 +12,12 @@
   #spectrogram { max-width: 100%; border: 1px solid var(--border); display: none; margin-top: 12px; }
   .file-list { display: flex; flex-wrap: wrap; gap: 8px; }
   .file-list button.active { border-color: var(--accent); color: var(--accent); }
+  .opts { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+  .opt-group { border: 1px solid var(--border); padding: 6px 14px 10px; margin: 0; min-width: 190px; }
+  .opt-group legend { color: var(--fg-dim); font-size: 12px; padding: 0 6px; }
+  .opt-group label { display: block; margin-top: 6px; cursor: pointer; }
+  .opt-group input { accent-color: var(--accent); margin-right: 6px; }
+  .opt-group:disabled label { opacity: 0.45; cursor: default; }
 </style>
 </head>
 <body>
@@ -30,11 +36,21 @@
   </div>
   <div class="panel">
     <p id="current" class="muted">Файл не выбран.</p>
+    <div class="opts">
+      <fieldset class="opt-group" id="grp-dir" disabled>
+        <legend>Направление</legend>
+        <label><input type="radio" name="dir" value="normal" checked>Normal</label>
+        <label><input type="radio" name="dir" value="reverse">Reverse</label>
+      </fieldset>
+      <fieldset class="opt-group" id="grp-speed" disabled>
+        <legend>Скорость</legend>
+        <label><input type="radio" name="speed" value="1" checked>x1</label>
+        <label><input type="radio" name="speed" value="0.5">Slow x0.5</label>
+        <label><input type="radio" name="speed" value="2">Fast x2</label>
+      </fieldset>
+    </div>
     <p>
-      <button id="normal" type="button" disabled>Normal</button>
-      <button id="reverse" type="button" disabled>Reverse</button>
-      <button id="slow" type="button" disabled>Slow x0.5</button>
-      <button id="fast" type="button" disabled>Fast x2</button>
+      <button id="play" type="button" disabled>&#9654; Воспроизвести</button>
       <button id="spec" type="button" disabled>Spectrogram</button>
     </p>
     <p class="muted" id="status"></p>
@@ -59,8 +75,24 @@ let currentFile = null;
 let currentPoint = null;
 let usedReverse = false;
 let usedSpectrogram = false;
+let currentSource = null;
+
+function setControlsEnabled(on) {
+  document.getElementById('grp-dir').disabled = !on;
+  document.getElementById('grp-speed').disabled = !on;
+  document.getElementById('play').disabled = !on;
+  document.getElementById('spec').disabled = !on;
+}
+
+function stopPlayback() {
+  if (currentSource) {
+    try { currentSource.stop(); } catch (e) { /* уже остановлен */ }
+    currentSource = null;
+  }
+}
 
 async function loadFile(name) {
+  stopPlayback();
   currentFile = name;
   usedReverse = false;
   usedSpectrogram = false;
@@ -77,9 +109,7 @@ async function loadFile(name) {
     document.getElementById('status').innerHTML =
       '<span class="status-bad">Запись не читается (файл-заглушка ещё не заменён).</span>';
   }
-  ['normal', 'reverse', 'slow', 'fast', 'spec'].forEach(id => {
-    document.getElementById(id).disabled = false;
-  });
+  setControlsEnabled(true);
 }
 
 function play(rate, reversed) {
@@ -91,11 +121,15 @@ function play(rate, reversed) {
       buf.copyToChannel(buffer.getChannelData(ch).slice().reverse(), ch);
     }
   }
+  stopPlayback();
+  if (ctx.state === 'suspended') ctx.resume();
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = rate;
   src.connect(ctx.destination);
+  src.onended = () => { if (currentSource === src) currentSource = null; };
   src.start();
+  currentSource = src;
 }
 
 function checkProgress() {
@@ -109,10 +143,11 @@ function checkProgress() {
 document.addEventListener('DOMContentLoaded', function () {
   function selectPoint(code) {
     currentPoint = code;
+    stopPlayback();
     currentFile = null; buffer = null; usedReverse = false; usedSpectrogram = false;
     document.querySelectorAll('#points button').forEach(b => b.classList.toggle('active', b.dataset.point === code));
     document.querySelectorAll('#files button').forEach(b => b.classList.remove('active'));
-    ['normal', 'reverse', 'slow', 'fast', 'spec'].forEach(id => { document.getElementById(id).disabled = true; });
+    setControlsEnabled(false);
     document.getElementById('spectrogram').style.display = 'none';
     document.getElementById('current').textContent = 'Файл не выбран.';
     document.getElementById('status').textContent = '';
@@ -141,12 +176,12 @@ document.addEventListener('DOMContentLoaded', function () {
     loadFile(btn.dataset.file);
   });
 
-  document.getElementById('normal').addEventListener('click', () => play(1, false));
-  document.getElementById('slow').addEventListener('click', () => play(0.5, false));
-  document.getElementById('fast').addEventListener('click', () => play(2, false));
-  document.getElementById('reverse').addEventListener('click', () => {
-    usedReverse = true;
-    play(1, true);
+  // Фильтры только выбираются (радиокнопки); запись играет по кнопке «Воспроизвести».
+  document.getElementById('play').addEventListener('click', () => {
+    const reversed = document.querySelector('input[name="dir"]:checked').value === 'reverse';
+    const rate = Number(document.querySelector('input[name="speed"]:checked').value);
+    if (reversed) usedReverse = true;
+    play(rate, reversed);
     checkProgress();
   });
   document.getElementById('spec').addEventListener('click', () => {
