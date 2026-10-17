@@ -10,7 +10,8 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   .cam-thumb { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
-  .cam-thumb:hover img, .cam-thumb:focus-visible img { outline: 1px solid var(--accent); }
+  .cam-thumb:hover img, .cam-thumb:focus-visible img,
+  .cam-thumb:hover video, .cam-thumb:focus-visible video { outline: 1px solid var(--accent); }
   .cam-modal { max-width: 960px; }
   .cam-view img, .cam-view video { width: 100%; display: block; background: #000; }
 </style>
@@ -46,6 +47,26 @@ const SPEAKER_DELAY_MS = 30000;
 // Надпись над изображением: до появления кнопки и в момент её появления.
 const NOTICE_WAIT = 'В случае фиксации движения, появится возможность Громкоговорителя';
 const NOTICE_MOTION = 'Обнаружено движение. Включена возможность голосовой связи.';
+
+// Видео камер всегда без звука: в части файлов есть звуковая дорожка, а управления у видео нет.
+function forceMute(v) {
+  v.defaultMuted = true;
+  v.muted = true;
+  v.volume = 0;
+  v.addEventListener('volumechange', () => {
+    if (!v.muted || v.volume !== 0) { v.muted = true; v.volume = 0; }
+  });
+}
+
+// Если файла camera_NN.mp4 нет или браузер не может его проиграть — показываем кадр camera_NN_empty.jpg.
+function withStillFallback(v, cam, still) {
+  v.addEventListener('error', () => {
+    const img = document.createElement('img');
+    img.src = still;
+    img.alt = cam;
+    v.replaceWith(img);
+  });
+}
 
 let camBackdrop = null;
 let speakerTimer = null;
@@ -83,17 +104,14 @@ function runSpeaker(cam, out) {
   if (audio) audio.play().catch(() => {});
 }
 
-// Камера разворачивается в окне. Видео (только у камеры из CONFIG.cameraId) начинает играть
-// с этого момента, остальные камеры показывают неподвижный кадр. Кнопка «Громкоговоритель»
-// появляется через SPEAKER_DELAY_MS после разворачивания.
+// Камера разворачивается в окне, и её видео начинает играть с первого кадра (без звука, в цикле).
+// Кнопка «Громкоговоритель» появляется через SPEAKER_DELAY_MS после разворачивания.
 function openCamera(cam) {
   closeCamera();
   const n = cam.slice(-2);
   const still = `img/camera_${n}_empty.jpg`;
-  const view = cam === CONFIG.cameraId
-    ? `<video src="img/camera_${n}.mp4" poster="${still}" aria-label="${cam}"
-             autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>`
-    : `<img src="${still}" alt="${cam}">`;
+  const view = `<video src="img/camera_${n}.mp4" aria-label="${cam}"
+             autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>`;
 
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
@@ -111,15 +129,10 @@ function openCamera(cam) {
 
   const video = backdrop.querySelector('video');
   if (video) {
-    video.muted = true; // autoplay разрешён только для видео без звука
-    video.addEventListener('error', () => {
-      const img = document.createElement('img');
-      img.src = still;
-      img.alt = cam;
-      video.replaceWith(img);
-    });
+    forceMute(video); // autoplay разрешён только для видео без звука
+    withStillFallback(video, cam, still);
     const started = video.play();
-    if (started && started.catch) started.catch(() => {}); // если автозапуск запрещён, остаётся кадр-постер
+    if (started && started.catch) started.catch(() => {}); // если автозапуск запрещён, остаётся первый кадр
   }
 
   const btnBox = backdrop.querySelector('[data-role="speaker-btn"]');
@@ -140,16 +153,23 @@ function openCamera(cam) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // До нажатия все камеры показывают неподвижный кадр camera_NN_empty.jpg (запись «заморожена»).
+  // До нажатия каждая камера — её видео, остановленное на первом кадре (не играет, звука нет).
+  // «#t=0.001» заставляет браузер показать первый кадр без запуска воспроизведения.
   document.getElementById('cams').innerHTML = CAMERAS.map(c => {
     const n = c.slice(-2);
     return `<div class="tile" style="cursor:default">
         <button type="button" class="cam-thumb" data-open="${c}" aria-label="Развернуть ${c}">
-          <img src="img/camera_${n}_empty.jpg" alt="${c}">
+          <video src="img/camera_${n}.mp4#t=0.001" aria-label="${c}"
+                 muted loop playsinline preload="metadata" disablepictureinpicture disableremoteplayback></video>
         </button>
         ${c}
       </div>`;
   }).join('');
+  document.querySelectorAll('#cams video').forEach((v, i) => {
+    forceMute(v);
+    withStillFallback(v, CAMERAS[i], `img/camera_${CAMERAS[i].slice(-2)}_empty.jpg`);
+    v.pause(); // на случай, если браузер всё же запустил воспроизведение
+  });
 
   document.getElementById('cams').addEventListener('click', e => {
     const btn = e.target.closest('[data-open]');
