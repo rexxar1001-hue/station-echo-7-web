@@ -152,8 +152,10 @@ function openCamera(cam) {
   const notice = backdrop.querySelector('[data-role="notice"]');
   speakerTimer = setTimeout(() => {
     btnBox.style.display = '';
-    notice.textContent = NOTICE_MOTION;
-    notice.className = 'status-bad';
+    if (cam === CONFIG.cameraId) { // уведомление о движении — только на целевой камере
+      notice.textContent = NOTICE_MOTION;
+      notice.className = 'status-bad';
+    }
   }, SPEAKER_DELAY_MS);
 
   backdrop.addEventListener('click', e => {
