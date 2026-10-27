@@ -66,9 +66,9 @@ const CONFIG = {
   // Квест 4 — аудиоархив
   // Для каждой точки AP-NN своя папка audio/AP-NN/ с теми же 14 файлами; верная запись — только в correctPoint.
   audioRoot: 'audio/',
-  // Готовые записи: records/AP01-rec_47_2.mp3 (точка без дефиса, точка в частоте заменена на «_»).
+  // Готовые записи: records_v2/AP01-rec_47_2.mp3 (точка без дефиса, точка в частоте заменена на «_»).
   // Если такого файла нет, радиоархив использует заглушку из audio/AP-NN/.
-  recordsRoot: 'records/',
+  recordsRoot: 'records_v2/',
   audioFiles: [
     'rec_38.6.wav', 'rec_47.2.wav', 'rec_59.4.wav', 'rec_71.9.wav',
     'rec_88.3.wav', 'rec_96.5.wav', 'rec_104.8.wav', 'rec_117.2.wav',
