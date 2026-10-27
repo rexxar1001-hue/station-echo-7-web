@@ -103,7 +103,12 @@ async function loadFile(name) {
   document.getElementById('status').textContent = 'Загрузка…';
   ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
   try {
-    const data = await (await fetch(CONFIG.audioRoot + currentPoint + '/' + name)).arrayBuffer();
+    // Сначала настоящая запись из records/ (AP01-rec_47_2.mp3); если её нет — заглушка из audio/.
+    const recName = currentPoint.replace('-', '') + '-' + name.replace(/\.(wav|mp3)$/, '').replace(/\./g, '_') + '.mp3';
+    let res = null;
+    try { res = await fetch(CONFIG.recordsRoot + recName); } catch (e) { res = null; }
+    if (!res || !res.ok) res = await fetch(CONFIG.audioRoot + currentPoint + '/' + name);
+    const data = await res.arrayBuffer();
     buffer = await ctx.decodeAudioData(data);
     document.getElementById('status').textContent = 'Запись загружена.';
   } catch (e) {
