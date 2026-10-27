@@ -77,7 +77,10 @@ let currentFile = null;
 let currentPoint = null;
 let usedReverse = false;
 let usedSpectrogram = false;
-let currentSource = null;
+let currentAudio = null;   // сейчас играющий <audio>
+let rawData = null;        // исходные байты записи
+let rawType = 'audio/wav';
+const urlCache = {};       // blob-адреса: обычный и обращённый вариант
 
 function setControlsEnabled(on) {
   document.getElementById('grp-dir').disabled = !on;
@@ -87,15 +90,39 @@ function setControlsEnabled(on) {
 }
 
 function stopPlayback() {
-  if (currentSource) {
-    try { currentSource.stop(); } catch (e) { /* уже остановлен */ }
-    currentSource = null;
+  if (currentAudio) {
+    try { currentAudio.pause(); } catch (e) { /* уже остановлен */ }
+    currentAudio = null;
   }
+}
+
+function resetUrls() {
+  Object.values(urlCache).forEach(u => URL.revokeObjectURL(u));
+  for (const k in urlCache) delete urlCache[k];
+}
+
+// WAV из AudioBuffer (для обратного воспроизведения): 16 бит, без потерь.
+function bufferToWav(buf) {
+  const ch = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate;
+  const out = new DataView(new ArrayBuffer(44 + len * ch * 2));
+  const str = (o, t) => { for (let i = 0; i < t.length; i++) out.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, 'RIFF'); out.setUint32(4, 36 + len * ch * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+  out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, ch, true);
+  out.setUint32(24, sr, true); out.setUint32(28, sr * ch * 2, true); out.setUint16(32, ch * 2, true);
+  out.setUint16(34, 16, true); str(36, 'data'); out.setUint32(40, len * ch * 2, true);
+  const data = []; for (let c = 0; c < ch; c++) data.push(buf.getChannelData(c));
+  let o = 44;
+  for (let i = 0; i < len; i++) for (let c = 0; c < ch; c++) {
+    const v = Math.max(-1, Math.min(1, data[c][i]));
+    out.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2;
+  }
+  return new Blob([out], { type: 'audio/wav' });
 }
 
 async function loadFile(name) {
   stopPlayback();
   currentFile = name;
+  resetUrls(); rawData = null;
   usedReverse = false;
   usedSpectrogram = false;
   document.getElementById('spectrogram').style.display = 'none';
@@ -109,6 +136,8 @@ async function loadFile(name) {
     try { res = await fetch(CONFIG.recordsRoot + recName); } catch (e) { res = null; }
     if (!res || !res.ok) res = await fetch(CONFIG.audioRoot + currentPoint + '/' + name);
     const data = await res.arrayBuffer();
+    rawData = data.slice(0);
+    rawType = res.url.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav';
     buffer = await ctx.decodeAudioData(data);
     document.getElementById('status').textContent = 'Запись загружена.';
   } catch (e) {
@@ -119,24 +148,30 @@ async function loadFile(name) {
   setControlsEnabled(true);
 }
 
+// Скорость меняется без смены тона (preservesPitch): голос остаётся прежним, как при растяжении времени.
 function play(rate, reversed) {
-  if (!buffer) return;
-  let buf = buffer;
-  if (reversed) {
-    buf = ctx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
-    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-      buf.copyToChannel(buffer.getChannelData(ch).slice().reverse(), ch);
-    }
+  if (!buffer || !rawData) return;
+  const key = reversed ? 'rev' : 'fwd';
+  if (!urlCache[key]) {
+    const blob = reversed
+      ? (() => {
+          const rb = ctx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+          for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+            rb.copyToChannel(buffer.getChannelData(ch).slice().reverse(), ch);
+          }
+          return bufferToWav(rb);
+        })()
+      : new Blob([rawData], { type: rawType });
+    urlCache[key] = URL.createObjectURL(blob);
   }
   stopPlayback();
-  if (ctx.state === 'suspended') ctx.resume();
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.playbackRate.value = rate;
-  src.connect(ctx.destination);
-  src.onended = () => { if (currentSource === src) currentSource = null; };
-  src.start();
-  currentSource = src;
+  const a = new Audio(urlCache[key]);
+  a.preservesPitch = true; a.mozPreservesPitch = true; a.webkitPreservesPitch = true;
+  a.playbackRate = rate;
+  a.addEventListener('ended', () => { if (currentAudio === a) currentAudio = null; });
+  currentAudio = a;
+  const started = a.play();
+  if (started && started.catch) started.catch(() => {});
 }
 
 function checkProgress() {
@@ -151,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function selectPoint(code) {
     currentPoint = code;
     stopPlayback();
-    currentFile = null; buffer = null; usedReverse = false; usedSpectrogram = false;
+    currentFile = null; buffer = null; rawData = null; resetUrls(); usedReverse = false; usedSpectrogram = false;
     document.querySelectorAll('#points button').forEach(b => b.classList.toggle('active', b.dataset.point === code));
     document.querySelectorAll('#files button').forEach(b => b.classList.remove('active'));
     setControlsEnabled(false);
